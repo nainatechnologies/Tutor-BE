@@ -1,0 +1,38 @@
+{
+  "name": "tutor-be",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nainatechnologies/Tutor-BE.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/nainatechnologies/Tutor-BE/issues"
+  },
+  "homepage": "https://github.com/nainatechnologies/Tutor-BE#readme",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cloudinary": "^1.41.3",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.2",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.4.0",
+    "multer-storage-cloudinary": "^4.0.0",
+    "mysql2": "^3.24.4",
+    "sequelize": "^6.37.8",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
