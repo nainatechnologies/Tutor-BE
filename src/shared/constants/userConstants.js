@@ -4,7 +4,6 @@ const USER_ROLES = {
     PARENT: 'parent',
     TUTOR: 'tutor',
     ADMIN: 'admin',
-    SUPER_ADMIN: 'super_admin',
 };
 
 const USER_STATUSES = {

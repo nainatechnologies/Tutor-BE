@@ -73,12 +73,22 @@ const TutorProfile = sequelize.define('TutorProfile', {
         defaultValue: PROFESSIONAL_TYPES.TEACHER,
     },
     rciNumber: {
-        type: DataTypes.STRING(50),
+        type: DataTypes.STRING(6),
         allowNull: true,
+        validate: {
+            len: [0, 6]
+        }
     },
     rciValidityDate: {
         type: DataTypes.DATEONLY,
         allowNull: true,
+        validate: {
+            isFutureDate(value) {
+                if (value && new Date(value) < new Date(new Date().toDateString())) {
+                    throw new Error('RCI Certificate Validity Date cannot be in the past.');
+                }
+            }
+        }
     },
     rciCertUrl: {
         type: DataTypes.STRING(500),
@@ -140,6 +150,22 @@ const TutorProfile = sequelize.define('TutorProfile', {
     },
     about: {
         type: DataTypes.TEXT,
+        allowNull: true,
+    },
+    bankName: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+    },
+    accountName: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+    },
+    accountNumber: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+    },
+    ifscCode: {
+        type: DataTypes.STRING(20),
         allowNull: true,
     },
     teachingApproach: {

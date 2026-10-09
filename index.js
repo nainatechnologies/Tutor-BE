@@ -18,9 +18,9 @@ const startServer = async () => {
         await sequelize.authenticate();
         console.log('Database connected successfully.');
 
-        // await sequelize.sync({ alter: true });
-        // console.log('Database tables synchronized successfully.');
-
+        // Automatically create tables based on models (disabled alter to prevent ER_TOO_MANY_KEYS)
+        await sequelize.sync();
+        console.log('Database tables synchronized successfully.');
         // Listen using the server, not the Express app
         server.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);

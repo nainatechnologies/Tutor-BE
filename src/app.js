@@ -16,8 +16,22 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// --- Routes will be imported here later ---
-// e.g., app.use('/api/users', userRoutes);
+// --- Swagger Documentation ---
+const { swaggerUi, specs } = require('./config/swagger');
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+
+// --- Routes ---
+const authRoutes = require('./modules/auth/routes/auth.routes');
+const masterRoutes = require('./modules/master/routes/master.routes');
+const usersRoutes = require('./modules/users/routes/users.routes');
+const connectionRoutes = require('./modules/connections/routes/connection.routes');
+const paymentRoutes = require('./modules/payments/routes/payment.routes');
+
+app.use('/api/auth', authRoutes);
+app.use('/api/master', masterRoutes);
+app.use('/api/users', usersRoutes);
+app.use('/api/connections', connectionRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Basic route to check if server is running
 app.get('/', (req, res) => {

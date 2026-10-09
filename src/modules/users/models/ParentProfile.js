@@ -63,6 +63,16 @@ const ParentProfile = sequelize.define('ParentProfile', {
         allowNull: false,
         defaultValue: true,
     },
+    isRegistrationFeePaid: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+    },
+    walletBalance: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+    },
 }, {
     tableName: 'parent_profiles',
     timestamps: true,
