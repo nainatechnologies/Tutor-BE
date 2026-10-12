@@ -23,3 +23,15 @@ exports.searchTutors = async (req, res, next) => {
         next(error);
     }
 };
+
+exports.getTutorById = async (req, res, next) => {
+    try {
+        const tutor = await searchService.getTutorById(req.params.id);
+        if (!tutor) {
+            return res.status(404).json({ success: false, message: 'Tutor not found' });
+        }
+        res.status(200).json({ success: true, data: tutor });
+    } catch (error) {
+        next(error);
+    }
+};

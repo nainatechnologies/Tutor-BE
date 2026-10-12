@@ -4,7 +4,7 @@ const router = express.Router();
 const authController = require('../controllers/auth.controller');
 const { registerSchema, loginSchema, sendOtpSchema, verifyOtpSchema, resetPasswordSchema, changePasswordSchema } = require('../validators/auth.validator');
 const validate = require('../../../shared/middlewares/validate.middleware');
-const { protect } = require('../../../shared/middlewares/auth.middleware');
+const { protect, optionalProtect } = require('../../../shared/middlewares/auth.middleware');
 const { otpRateLimiter, authRateLimiter } = require('../../../shared/middlewares/rateLimit.middleware');
 
 router.post(
@@ -23,4 +23,8 @@ router.post('/reset-password', authRateLimiter, validate(resetPasswordSchema), a
 // --- Change Password (Requires Login) ---
 router.post('/change-password', protect, validate(changePasswordSchema), authController.changePassword);
 
+// --- Logout (Safe & Idempotent) ---
+router.post('/logout', optionalProtect, authController.logout);
+
 module.exports = router;
+

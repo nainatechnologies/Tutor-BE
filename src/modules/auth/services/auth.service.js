@@ -247,11 +247,20 @@ const changePassword = async (userId, currentPassword, newPassword) => {
     return true;
 };
 
+const logoutUser = async (user) => {
+    return {
+        message: 'Logged out successfully',
+        userId: user ? user.id : null,
+    };
+};
+
 module.exports = {
     registerUser,
     loginUser,
     sendOtp,
     verifyOtp,
     resetPassword,
-    changePassword
+    changePassword,
+    logoutUser,
 };
+

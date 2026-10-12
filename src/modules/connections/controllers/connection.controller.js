@@ -22,7 +22,7 @@ const manageConnection = async (req, res) => {
             return res.status(200).json({ success: true, data: connection });
         }
     } catch (error) {
-        return res.status(400).json({ success: false, message: error.errors || error.message });
+        return res.status(error.statusCode || 400).json({ success: false, message: error.errors || error.message });
     }
 };
 

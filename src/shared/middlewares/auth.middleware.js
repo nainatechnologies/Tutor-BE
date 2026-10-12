@@ -47,6 +47,43 @@ const protect = async (req, res, next) => {
     }
 };
 
+const optionalProtect = async (req, res, next) => {
+    try {
+        let token;
+
+        // 1. Extract Bearer token if present
+        if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+            token = req.headers.authorization.split(' ')[1];
+        }
+
+        if (!token || token === 'undefined' || token === 'null') {
+            return next();
+        }
+
+        // 2. Safely verify token without throwing
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const currentUser = await User.findByPk(decoded.id, {
+                include: [
+                    { model: ParentProfile, as: 'parentProfile' },
+                    { model: TutorProfile, as: 'tutorProfile' },
+                ],
+            });
+
+            if (currentUser && currentUser.status !== 'suspended' && currentUser.status !== 'inactive') {
+                req.user = currentUser;
+            }
+        } catch {
+            // Token expired or invalid - ignore for optional auth
+        }
+
+        next();
+    } catch (error) {
+        next();
+    }
+};
+
 module.exports = {
     protect,
+    optionalProtect,
 };

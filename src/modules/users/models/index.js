@@ -10,6 +10,7 @@ const Appointment = require('../../appointments/models/Appointment');
 const Payment = require('../../payments/models/Payment');
 const Complaint = require('../../support/models/Complaint');
 const Review = require('../../reviews/models/Review');
+const { Wallet, WalletTransaction } = require('../../wallet/models');
 
 // ==========================================
 // User <-> ParentProfile (1:1)
@@ -135,6 +136,15 @@ Review.belongsTo(ParentProfile, { foreignKey: 'reviewerId', as: 'reviewer' });
 TutorProfile.hasMany(Review, { foreignKey: 'tutorId', as: 'reviewsReceived' });
 Review.belongsTo(TutorProfile, { foreignKey: 'tutorId', as: 'tutor' });
 
+// ==========================================
+// Wallet Associations
+// ==========================================
+User.hasOne(Wallet, { foreignKey: 'userId', as: 'wallet', onDelete: 'CASCADE' });
+Wallet.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+User.hasMany(WalletTransaction, { foreignKey: 'userId', as: 'walletTransactions', onDelete: 'CASCADE' });
+WalletTransaction.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
 module.exports = {
     User,
     ParentProfile,
@@ -148,4 +158,7 @@ module.exports = {
     Payment,
     Complaint,
     Review,
+    Wallet,
+    WalletTransaction,
 };
+

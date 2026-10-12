@@ -65,15 +65,27 @@ const updateProfile = async (userId, role, updateData) => {
 
         // Simple sync for children if provided in the payload
         if (children && Array.isArray(children)) {
-            // For true sync, we'd delete missing and update/create existing.
-            // A simple implementation: destroy existing and recreate to ensure exact match.
-            await ChildProfile.destroy({ where: { parentId: profile.id } });
+            if (children.length > 2) {
+                throw new AppError('A parent can register a maximum of 2 children.', 400);
+            }
+            const existingChildren = await ChildProfile.findAll({ where: { parentId: profile.id } });
+            for (const existing of existingChildren) {
+                await existing.setSubjects([]);
+                await existing.destroy();
+            }
             
             for (const childData of children) {
-                const { subjectIds, ...childDetails } = childData;
+                const { subjectIds, subjects, ...childDetails } = childData;
                 const child = await ChildProfile.create({ parentId: profile.id, ...childDetails });
-                if (subjectIds && subjectIds.length > 0) {
-                    await child.setSubjects(subjectIds);
+                
+                let targetIds = Array.isArray(subjectIds) && subjectIds.length > 0 ? subjectIds : [];
+                if (targetIds.length === 0 && Array.isArray(subjects) && subjects.length > 0) {
+                    const matched = await Subject.findAll({ where: { name: subjects } });
+                    targetIds = matched.map(s => s.id);
+                }
+
+                if (targetIds.length > 0) {
+                    await child.setSubjects(targetIds);
                 }
             }
         }

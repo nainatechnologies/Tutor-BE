@@ -27,6 +27,8 @@ const usersRoutes = require('./modules/users/routes/users.routes');
 const connectionRoutes = require('./modules/connections/routes/connection.routes');
 const paymentRoutes = require('./modules/payments/routes/payment.routes');
 const searchRoutes = require('./modules/search/routes/search.routes');
+const walletRoutes = require('./modules/wallet/routes/wallet.routes');
+const adminRoutes = require('./modules/admin/routes/admin.routes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/master', masterRoutes);
@@ -34,6 +36,8 @@ app.use('/api/users', usersRoutes);
 app.use('/api/connections', connectionRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/search', searchRoutes);
+app.use('/api/wallet', walletRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Basic route to check if server is running
 app.get('/', (req, res) => {

@@ -2,7 +2,7 @@ const { z } = require('zod');
 
 const connectionRequestSchema = z.object({
     tutorId: z.string().uuid("Invalid tutor ID"),
-    message: z.string().max(500, "Message is too long").optional(),
+    message: z.string().max(3000, "Message is too long").optional(),
 });
 
 const updateConnectionSchema = z.object({

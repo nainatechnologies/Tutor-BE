@@ -10,7 +10,10 @@ exports.searchTutors = async (filters) => {
     };
 
     if (city) {
-        whereClause.city = { [Op.iLike]: `%${city}%` };
+        whereClause[Op.or] = [
+            { city: { [Op.like]: `%${city}%` } },
+            { pincode: { [Op.like]: `%${city}%` } }
+        ];
     }
     if (pincode) {
         whereClause.pincode = pincode;
@@ -62,4 +65,23 @@ exports.searchTutors = async (filters) => {
         page: Number(page),
         totalPages: Math.ceil(total / limit),
     };
+};
+
+exports.getTutorById = async (id) => {
+    return await TutorProfile.findByPk(id, {
+        include: [
+            {
+                model: User,
+                as: 'user',
+                attributes: ['id', 'email', 'phone', 'status'],
+            },
+            {
+                model: Subject,
+                as: 'subjects',
+                attributes: ['id', 'name'],
+                through: { attributes: [] }
+            }
+        ],
+        attributes: { exclude: ['aadharNumber', 'bankName', 'accountName', 'accountNumber', 'ifscCode', 'aadharDocUrl', 'rciCertUrl', 'qualCertUrl'] },
+    });
 };

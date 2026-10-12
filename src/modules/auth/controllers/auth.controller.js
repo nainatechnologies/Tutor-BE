@@ -55,10 +55,21 @@ const changePassword = async (req, res, next) => {
     }
 };
 
+const logout = async (req, res, next) => {
+    try {
+        const result = await authService.logoutUser(req.user);
+        return sendSuccess(res, null, result.message, 200);
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     register,
     login,
     sendOtp,
     resetPassword,
-    changePassword
+    changePassword,
+    logout,
 };
+
