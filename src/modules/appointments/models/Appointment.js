@@ -31,6 +31,10 @@ const Appointment = sequelize.define('Appointment', {
         type: DataTypes.UUID,
         allowNull: true,
     },
+    subjectId: {
+        type: DataTypes.UUID,
+        allowNull: true,
+    },
     scheduledDate: {
         type: DataTypes.DATE,
         allowNull: false,

@@ -3,7 +3,7 @@ const app = require('./src/app');
 const sequelize = require('./src/config/database');
 const http = require('http');
 
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 5001;
 
 // Create the raw HTTP server
 const server = http.createServer(app);

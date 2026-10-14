@@ -112,6 +112,8 @@ TutorProfile.hasMany(Appointment, { foreignKey: 'tutorId', as: 'appointments' })
 Appointment.belongsTo(TutorProfile, { foreignKey: 'tutorId', as: 'tutor' });
 ChildProfile.hasMany(Appointment, { foreignKey: 'childId', as: 'appointments' });
 Appointment.belongsTo(ChildProfile, { foreignKey: 'childId', as: 'child' });
+Subject.hasMany(Appointment, { foreignKey: 'subjectId', as: 'appointments' });
+Appointment.belongsTo(Subject, { foreignKey: 'subjectId', as: 'subject' });
 
 // ==========================================
 // Payment Associations

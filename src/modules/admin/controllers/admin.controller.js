@@ -54,8 +54,121 @@ const registerTutor = async (req, res, next) => {
     }
 };
 
+/**
+ * Controller to fetch aggregated Admin Dashboard KPIs.
+ * GET /api/admin/dashboard/stats
+ */
+const getDashboardStats = async (req, res, next) => {
+    try {
+        const stats = await adminService.getDashboardStats();
+        res.status(200).json({
+            success: true,
+            data: stats,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Controller to fetch class connection requests.
+ * GET /api/admin/leads?page=1&limit=10&status=...&search=...
+ */
+const getAdminLeads = async (req, res, next) => {
+    try {
+        const result = await adminService.getAdminLeads(req.query);
+        res.status(200).json({
+            success: true,
+            count: result.data.length,
+            data: result.data,
+            pagination: result.pagination,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Controller to fetch platform payment transactions.
+ * GET /api/admin/payments?page=1&limit=15
+ */
+const getAdminPayments = async (req, res, next) => {
+    try {
+        const result = await adminService.getAdminPayments(req.query);
+        res.status(200).json({
+            success: true,
+            count: result.data.length,
+            data: result.data,
+            pagination: result.pagination,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Controller to fetch parent & child registrations.
+ * GET /api/admin/parent-registrations
+ */
+const getParentRegistrations = async (req, res, next) => {
+    try {
+        const result = await adminService.getParentRegistrations(req.query);
+        res.status(200).json({
+            success: true,
+            count: result.data.length,
+            data: result.data,
+            pagination: result.pagination,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Controller to fetch appointments across the platform.
+ * GET /api/admin/appointments
+ */
+const getAppointments = async (req, res, next) => {
+    try {
+        const appointmentService = require('../../appointments/services/appointment.service');
+        const result = await appointmentService.getAdminAppointments(req.query);
+        res.status(200).json({
+            success: true,
+            data: result.appointments,
+            pagination: result.pagination,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Controller to update appointment status/details.
+ * PATCH /api/admin/appointments/:id
+ */
+const updateAppointment = async (req, res, next) => {
+    try {
+        const appointmentService = require('../../appointments/services/appointment.service');
+        const updated = await appointmentService.updateAppointmentByAdmin(req.params.id, req.body);
+        res.status(200).json({
+            success: true,
+            message: 'Appointment updated successfully',
+            data: updated,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     getRegistrationRequests,
     updateRegistrationStatus,
     registerTutor,
+    getDashboardStats,
+    getAdminLeads,
+    getAdminPayments,
+    getParentRegistrations,
+    getAppointments,
+    updateAppointment,
 };
+
