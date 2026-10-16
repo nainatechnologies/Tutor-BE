@@ -221,6 +221,11 @@ const TutorProfile = sequelize.define('TutorProfile', {
         allowNull: false,
         defaultValue: 0.00,
     },
+    viewsCount: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+    },
 }, {
     tableName: 'tutor_profiles',
     timestamps: true,

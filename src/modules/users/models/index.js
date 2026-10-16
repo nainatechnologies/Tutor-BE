@@ -2,6 +2,7 @@ const User = require('./User');
 const ParentProfile = require('./ParentProfile');
 const ChildProfile = require('./ChildProfile');
 const TutorProfile = require('./TutorProfile');
+const AdminProfile = require('./AdminProfile');
 const Category = require('../../master/models/Category');
 const Subject = require('../../master/models/Subject');
 const OtpCode = require('./OtpCode');
@@ -34,6 +35,19 @@ User.hasOne(TutorProfile, {
     onDelete: 'CASCADE',
 });
 TutorProfile.belongsTo(User, {
+    foreignKey: 'userId',
+    as: 'user',
+});
+
+// ==========================================
+// User <-> AdminProfile (1:1)
+// ==========================================
+User.hasOne(AdminProfile, {
+    foreignKey: 'userId',
+    as: 'adminProfile',
+    onDelete: 'CASCADE',
+});
+AdminProfile.belongsTo(User, {
     foreignKey: 'userId',
     as: 'user',
 });
@@ -128,15 +142,29 @@ User.hasMany(Complaint, { foreignKey: 'reporterId', as: 'complaintsFiled' });
 Complaint.belongsTo(User, { foreignKey: 'reporterId', as: 'reporter' });
 User.hasMany(Complaint, { foreignKey: 'reportedId', as: 'complaintsReceived' });
 Complaint.belongsTo(User, { foreignKey: 'reportedId', as: 'reportedUser' });
+Appointment.hasMany(Complaint, { foreignKey: 'appointmentId', as: 'complaints' });
+Complaint.belongsTo(Appointment, { foreignKey: 'appointmentId', as: 'appointment' });
 
 // ==========================================
 // Review Associations
 // ==========================================
-ParentProfile.hasMany(Review, { foreignKey: 'reviewerId', as: 'reviewsGiven' });
-Review.belongsTo(ParentProfile, { foreignKey: 'reviewerId', as: 'reviewer' });
+User.hasMany(Review, { foreignKey: 'reviewerId', as: 'reviewsGiven' });
+Review.belongsTo(User, { foreignKey: 'reviewerId', as: 'reviewerUser' });
+
+ParentProfile.hasMany(Review, { foreignKey: 'reviewerId', sourceKey: 'userId', as: 'reviewsGiven', constraints: false });
+Review.belongsTo(ParentProfile, { foreignKey: 'reviewerId', targetKey: 'userId', as: 'reviewer', constraints: false });
+
+TutorProfile.hasMany(Review, { foreignKey: 'reviewerId', sourceKey: 'userId', as: 'tutorReviewsGiven', constraints: false });
+Review.belongsTo(TutorProfile, { foreignKey: 'reviewerId', targetKey: 'userId', as: 'reviewerTutor', constraints: false });
 
 TutorProfile.hasMany(Review, { foreignKey: 'tutorId', as: 'reviewsReceived' });
 Review.belongsTo(TutorProfile, { foreignKey: 'tutorId', as: 'tutor' });
+
+ParentProfile.hasMany(Review, { foreignKey: 'parentId', as: 'parentReviewsReceived' });
+Review.belongsTo(ParentProfile, { foreignKey: 'parentId', as: 'reviewedParent' });
+
+Appointment.hasOne(Review, { foreignKey: 'appointmentId', as: 'review' });
+Review.belongsTo(Appointment, { foreignKey: 'appointmentId', as: 'appointment' });
 
 // ==========================================
 // Wallet Associations
@@ -152,6 +180,7 @@ module.exports = {
     ParentProfile,
     ChildProfile,
     TutorProfile,
+    AdminProfile,
     Category,
     Subject,
     OtpCode,

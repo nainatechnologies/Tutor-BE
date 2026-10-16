@@ -66,6 +66,16 @@ const updateAdminAppointmentSchema = z.object({
     scheduledDate: z.string().optional().nullable(),
 });
 
+const updateAdminProfileSchema = z.object({
+    businessName: z.string().min(1, 'Business name cannot be empty').optional(),
+    registrationNo: z.string().min(1, 'Registration number cannot be empty').optional(),
+    address: z.string().min(1, 'Business address cannot be empty').optional(),
+    businessDescription: z.string().min(1, 'Business description cannot be empty').optional(),
+    name: z.string().min(1, 'Admin name cannot be empty').optional(),
+    email: z.string().email('Invalid email address').optional(),
+    phone: z.string().min(7, 'Valid phone number is required').optional(),
+});
+
 module.exports = {
     updateStatusSchema,
     registerTutorSchema,
@@ -75,6 +85,7 @@ module.exports = {
     getParentRegistrationsSchema,
     getAdminAppointmentsSchema,
     updateAdminAppointmentSchema,
+    updateAdminProfileSchema,
 };
 
 

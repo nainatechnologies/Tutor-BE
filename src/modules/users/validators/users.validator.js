@@ -35,7 +35,13 @@ const updateParentProfileSchema = z.object({
     children: z.array(childSchema).max(2, "A parent can register a maximum of 2 children").optional(),
 }).passthrough();
 
+// Schema for tutor analytics query params
+const analyticsQuerySchema = z.object({
+    timeRange: z.enum(['7d', '30d', '3m', '12m']).optional().default('30d'),
+});
+
 module.exports = {
     updateParentProfileSchema,
-    childSchema
+    childSchema,
+    analyticsQuerySchema,
 };

@@ -47,8 +47,23 @@ const uploadFile = async (req, res, next) => {
     }
 };
 
+// 4. Get Tutor Analytics
+const getTutorAnalytics = async (req, res, next) => {
+    try {
+        const timeRange = req.query.timeRange || '30d';
+        const analytics = await usersService.getTutorAnalytics(req.user.id, timeRange);
+        res.status(200).json({
+            success: true,
+            data: analytics
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     getProfile,
     updateProfile,
-    uploadFile
+    uploadFile,
+    getTutorAnalytics
 };

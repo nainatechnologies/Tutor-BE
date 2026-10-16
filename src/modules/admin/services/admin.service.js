@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs');
 const { Op, QueryTypes } = require('sequelize');
 const sequelize = require('../../../config/database');
-const { User, TutorProfile, ParentProfile, ChildProfile, Subject, Connection, Payment, WalletTransaction } = require('../../users/models');
+const { User, TutorProfile, ParentProfile, ChildProfile, Subject, Connection, Payment, WalletTransaction, AdminProfile } = require('../../users/models');
 const { walletService } = require('../../wallet/services/wallet.service');
 const AppError = require('../../../shared/utils/AppError');
 const {
@@ -668,6 +668,99 @@ const getParentRegistrations = async (query = {}) => {
     };
 };
 
+/**
+ * Get Admin and Business Profile (fetches or creates default)
+ */
+const getAdminProfile = async (adminUserId) => {
+    let profile = null;
+    if (adminUserId) {
+        profile = await AdminProfile.findOne({ where: { userId: adminUserId } });
+    }
+    if (!profile) {
+        profile = await AdminProfile.findOne({ order: [['createdAt', 'ASC']] });
+    }
+    if (!profile) {
+        let defaultEmail = 'contact@tutorapp.in';
+        let defaultPhone = '+91 98765 43210';
+        if (adminUserId) {
+            const user = await User.findByPk(adminUserId);
+            if (user?.email) defaultEmail = user.email;
+            if (user?.phone) defaultPhone = user.phone;
+        }
+        profile = await AdminProfile.create({
+            userId: adminUserId || null,
+            businessName: 'TutorApp India',
+            registrationNo: 'REG-2023-9912',
+            address: '123 Education Hub, Tech Park, City - 400001',
+            businessDescription: 'Leading tutoring platform connecting students with expert educators across various subjects and disciplines.',
+            name: 'Super Admin',
+            email: defaultEmail,
+            phone: defaultPhone,
+        });
+    }
+
+    return {
+        id: profile.id,
+        businessName: profile.businessName,
+        registrationNo: profile.registrationNo,
+        address: profile.address,
+        businessDescription: profile.businessDescription,
+        name: profile.name,
+        email: profile.email,
+        phone: profile.phone,
+        updatedAt: profile.updatedAt,
+    };
+};
+
+/**
+ * Update Admin and Business Profile
+ */
+const updateAdminProfile = async (adminUserId, payload) => {
+    let profile = null;
+    if (adminUserId) {
+        profile = await AdminProfile.findOne({ where: { userId: adminUserId } });
+    }
+    if (!profile) {
+        profile = await AdminProfile.findOne({ order: [['createdAt', 'ASC']] });
+    }
+    if (!profile) {
+        profile = await AdminProfile.create({
+            userId: adminUserId || null,
+            businessName: payload.businessName || 'TutorApp India',
+            registrationNo: payload.registrationNo || 'REG-2023-9912',
+            address: payload.address || '123 Education Hub, Tech Park, City - 400001',
+            businessDescription: payload.businessDescription || 'Leading tutoring platform connecting students with expert educators across various subjects and disciplines.',
+            name: payload.name || 'Super Admin',
+            email: payload.email || 'contact@tutorapp.in',
+            phone: payload.phone || '+91 98765 43210',
+        });
+    } else {
+        const updateFields = {};
+        if (payload.businessName !== undefined) updateFields.businessName = payload.businessName;
+        if (payload.registrationNo !== undefined) updateFields.registrationNo = payload.registrationNo;
+        if (payload.address !== undefined) updateFields.address = payload.address;
+        if (payload.businessDescription !== undefined) updateFields.businessDescription = payload.businessDescription;
+        if (payload.name !== undefined) updateFields.name = payload.name;
+        if (payload.phone !== undefined) updateFields.phone = payload.phone;
+        if (payload.email !== undefined) updateFields.email = payload.email;
+        if (adminUserId && !profile.userId) updateFields.userId = adminUserId;
+
+        await profile.update(updateFields);
+    }
+
+    return {
+        id: profile.id,
+        businessName: profile.businessName,
+        registrationNo: profile.registrationNo,
+        address: profile.address,
+        businessDescription: profile.businessDescription,
+        name: profile.name,
+        email: profile.email,
+        phone: profile.phone,
+        updatedAt: profile.updatedAt,
+    };
+};
+
 module.exports = {
     getRegistrationRequests,
     updateRegistrationStatus,
@@ -676,6 +769,8 @@ module.exports = {
     getAdminLeads,
     getAdminPayments,
     getParentRegistrations,
+    getAdminProfile,
+    updateAdminProfile,
 };
 
 

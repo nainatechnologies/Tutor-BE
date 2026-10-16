@@ -73,6 +73,16 @@ const ParentProfile = sequelize.define('ParentProfile', {
         allowNull: false,
         defaultValue: 0,
     },
+    rating: {
+        type: DataTypes.DECIMAL(3, 2),
+        allowNull: false,
+        defaultValue: 0.00,
+    },
+    reviewCount: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+    },
 }, {
     tableName: 'parent_profiles',
     timestamps: true,

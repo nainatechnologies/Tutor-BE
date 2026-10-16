@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const usersController = require('../controllers/users.controller');
-const { updateParentProfileSchema, childSchema } = require('../validators/users.validator');
+const { updateParentProfileSchema, childSchema, analyticsQuerySchema } = require('../validators/users.validator');
 
 const validate = require('../../../shared/middlewares/validate.middleware');
 const { protect } = require('../../../shared/middlewares/auth.middleware');
@@ -27,6 +27,14 @@ router.post(
     '/upload',
     upload.single('file'),
     usersController.uploadFile
+);
+
+// Get Tutor Analytics (Dynamic data)
+router.get(
+    '/tutor/analytics',
+    requireRole('TUTOR', 'tutor'),
+    validate(analyticsQuerySchema, 'query'),
+    usersController.getTutorAnalytics
 );
 
 module.exports = router;

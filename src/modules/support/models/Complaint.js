@@ -1,12 +1,6 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../../../config/database');
-
-const COMPLAINT_STATUS = {
-    OPEN: 'OPEN',
-    IN_PROGRESS: 'IN_PROGRESS',
-    RESOLVED: 'RESOLVED',
-    CLOSED: 'CLOSED'
-};
+const { COMPLAINT_STATUS, COMPLAINT_CATEGORY, COMPLAINT_PRIORITY } = require('../constants/complaint.constants');
 
 const Complaint = sequelize.define('Complaint', {
     id: {
@@ -23,6 +17,21 @@ const Complaint = sequelize.define('Complaint', {
         type: DataTypes.UUID,
         allowNull: true,
         comment: 'User ID of the person being complained about (if applicable)'
+    },
+    appointmentId: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        comment: 'Linked session ID if the complaint relates to a specific session'
+    },
+    category: {
+        type: DataTypes.ENUM(Object.values(COMPLAINT_CATEGORY)),
+        defaultValue: COMPLAINT_CATEGORY.OTHER,
+        allowNull: false,
+    },
+    priority: {
+        type: DataTypes.ENUM(Object.values(COMPLAINT_PRIORITY)),
+        defaultValue: COMPLAINT_PRIORITY.MEDIUM,
+        allowNull: false,
     },
     subject: {
         type: DataTypes.STRING,
@@ -43,8 +52,16 @@ const Complaint = sequelize.define('Complaint', {
 }, {
     tableName: 'complaints',
     timestamps: true,
+    indexes: [
+        { name: 'idx_complaints_reporter', fields: ['reporterId'] },
+        { name: 'idx_complaints_reported', fields: ['reportedId'] },
+        { name: 'idx_complaints_status', fields: ['status'] },
+        { name: 'idx_complaints_created', fields: ['createdAt'] }
+    ]
 });
 
 Complaint.STATUS = COMPLAINT_STATUS;
+Complaint.CATEGORY = COMPLAINT_CATEGORY;
+Complaint.PRIORITY = COMPLAINT_PRIORITY;
 
 module.exports = Complaint;

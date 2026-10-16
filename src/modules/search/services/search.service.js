@@ -68,7 +68,7 @@ exports.searchTutors = async (filters) => {
 };
 
 exports.getTutorById = async (id) => {
-    return await TutorProfile.findByPk(id, {
+    const tutor = await TutorProfile.findByPk(id, {
         include: [
             {
                 model: User,
@@ -84,4 +84,10 @@ exports.getTutorById = async (id) => {
         ],
         attributes: { exclude: ['aadharNumber', 'bankName', 'accountName', 'accountNumber', 'ifscCode', 'aadharDocUrl', 'rciCertUrl', 'qualCertUrl'] },
     });
+
+    if (tutor) {
+        tutor.increment('viewsCount').catch(() => {});
+    }
+
+    return tutor;
 };

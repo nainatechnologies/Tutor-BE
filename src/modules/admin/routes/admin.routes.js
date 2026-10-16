@@ -13,11 +13,18 @@ const {
     getParentRegistrationsSchema,
     getAdminAppointmentsSchema,
     updateAdminAppointmentSchema,
+    updateAdminProfileSchema,
 } = require('../validators/admin.validator');
 
 // Protect admin routes: Verify JWT authentication and enforce Admin role
 router.use(protect);
 router.use(requireRole('admin', 'ADMIN'));
+
+// GET /api/admin/profile - Retrieve admin & business profile
+router.get('/profile', adminController.getAdminProfile);
+
+// PUT /api/admin/profile - Update admin & business profile
+router.put('/profile', validate(updateAdminProfileSchema), adminController.updateAdminProfile);
 
 // GET /api/admin/registration-requests
 router.get(
@@ -72,6 +79,12 @@ router.get(
     adminController.getParentRegistrations
 );
 
+const reviewController = require('../../reviews/controllers/review.controller');
+const {
+    getAdminReviewsSchema,
+    updateReviewStatusSchema,
+} = require('../../reviews/validators/review.validator');
+
 // GET /api/admin/appointments
 router.get(
     '/appointments',
@@ -84,6 +97,40 @@ router.patch(
     '/appointments/:id',
     validate(updateAdminAppointmentSchema, 'body'),
     adminController.updateAppointment
+);
+
+// GET /api/admin/reviews - Admin reviews moderation list
+router.get(
+    '/reviews',
+    validate(getAdminReviewsSchema, 'query'),
+    reviewController.getAdminReviews
+);
+
+// PATCH /api/admin/reviews/:id/status - Admin hide / show review
+router.patch(
+    '/reviews/:id/status',
+    validate(updateReviewStatusSchema, 'body'),
+    reviewController.updateReviewStatus
+);
+
+const complaintController = require('../../support/controllers/complaint.controller');
+const {
+    getAdminComplaintsSchema,
+    updateComplaintStatusSchema,
+} = require('../../support/validators/complaint.validator');
+
+// GET /api/admin/complaints - Admin complaints moderation list
+router.get(
+    '/complaints',
+    validate(getAdminComplaintsSchema, 'query'),
+    complaintController.getAdminComplaints
+);
+
+// PATCH /api/admin/complaints/:id/status - Admin resolve / update complaint
+router.patch(
+    '/complaints/:id/status',
+    validate(updateComplaintStatusSchema, 'body'),
+    complaintController.updateComplaintStatus
 );
 
 module.exports = router;

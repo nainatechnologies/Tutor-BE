@@ -40,6 +40,8 @@ const paymentRoutes = require('./modules/payments/routes/payment.routes');
 const searchRoutes = require('./modules/search/routes/search.routes');
 const walletRoutes = require('./modules/wallet/routes/wallet.routes');
 const appointmentRoutes = require('./modules/appointments/routes/appointment.routes');
+const reviewRoutes = require('./modules/reviews/routes/review.routes');
+const complaintRoutes = require('./modules/support/routes/complaint.routes');
 const adminRoutes = require('./modules/admin/routes/admin.routes');
 const adminMasterRoutes = require('./modules/master/routes/master.admin.routes');
 
@@ -51,6 +53,8 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/appointments', appointmentRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/complaints', complaintRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/catalog', adminMasterRoutes);
 

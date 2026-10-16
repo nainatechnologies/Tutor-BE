@@ -160,6 +160,39 @@ const updateAppointment = async (req, res, next) => {
     }
 };
 
+/**
+ * Controller to get Admin & Business Profile.
+ * GET /api/admin/profile
+ */
+const getAdminProfile = async (req, res, next) => {
+    try {
+        const profile = await adminService.getAdminProfile(req.user?.id);
+        res.status(200).json({
+            success: true,
+            data: profile,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Controller to update Admin & Business Profile.
+ * PUT /api/admin/profile
+ */
+const updateAdminProfile = async (req, res, next) => {
+    try {
+        const profile = await adminService.updateAdminProfile(req.user?.id, req.body);
+        res.status(200).json({
+            success: true,
+            message: 'Admin profile updated successfully',
+            data: profile,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     getRegistrationRequests,
     updateRegistrationStatus,
@@ -170,5 +203,7 @@ module.exports = {
     getParentRegistrations,
     getAppointments,
     updateAppointment,
+    getAdminProfile,
+    updateAdminProfile,
 };
 
