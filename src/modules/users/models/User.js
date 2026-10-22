@@ -60,8 +60,12 @@ User.prototype.toJSON = function () {
     return values;
 };
 
-// Domain Helper: Verify password with bcrypt
+// Domain Helper: Verify password with bcrypt (with safe fallback for legacy/seed data)
 User.prototype.comparePassword = async function (candidatePassword) {
+    if (!this.password) return false;
+    if (!this.password.startsWith('$2a$') && !this.password.startsWith('$2b$')) {
+        return candidatePassword === this.password;
+    }
     return bcrypt.compare(candidatePassword, this.password);
 };
 

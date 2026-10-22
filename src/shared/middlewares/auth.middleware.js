@@ -6,9 +6,11 @@ const protect = async (req, res, next) => {
     try {
         let token;
 
-        // 1. Extract Bearer token from Authorization header
+        // 1. Extract Bearer token from Authorization header or query parameter (for SSE streams)
         if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
             token = req.headers.authorization.split(' ')[1];
+        } else if (req.query && req.query.token) {
+            token = req.query.token;
         }
 
         if (!token) {
@@ -51,9 +53,11 @@ const optionalProtect = async (req, res, next) => {
     try {
         let token;
 
-        // 1. Extract Bearer token if present
+        // 1. Extract Bearer token if present (or query param for SSE)
         if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
             token = req.headers.authorization.split(' ')[1];
+        } else if (req.query && req.query.token) {
+            token = req.query.token;
         }
 
         if (!token || token === 'undefined' || token === 'null') {

@@ -2,6 +2,8 @@ const razorpay = require('../../../config/razorpay');
 const crypto = require('crypto');
 const AppError = require('../../../shared/utils/AppError');
 const { ParentProfile, Payment } = require('../../users/models');
+const { createNotification } = require('../../notifications/services/notification.service');
+const { NOTIFICATION_TYPES } = require('../../../shared/constants/notificationConstants');
 
 const createOrder = async (req, res, next) => {
     try {
@@ -83,6 +85,19 @@ const verifyPayment = async (req, res, next) => {
                 } catch (walletErr) {
                     console.error('Wallet topup sync warning:', walletErr.message);
                 }
+            }
+
+            // Real-time notification for successful payment
+            try {
+                await createNotification({
+                    userId: req.user.id,
+                    type: NOTIFICATION_TYPES.PAYMENT,
+                    title: 'Payment Successful',
+                    message: 'Your payment was verified successfully. 400 Coins have been credited to your wallet!',
+                    data: { razorpayPaymentId: razorpay_payment_id },
+                });
+            } catch (notifErr) {
+                console.warn('Failed to dispatch payment notification:', notifErr.message);
             }
 
             res.status(200).json({

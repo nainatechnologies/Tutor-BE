@@ -8,6 +8,8 @@ const {
     Appointment,
 } = require('../../users/models');
 const { REVIEW_TARGET_TYPE, REVIEW_STATUS } = require('../../../shared/constants/reviewConstants');
+const { createNotification } = require('../../notifications/services/notification.service');
+const { NOTIFICATION_TYPES, NOTIFICATION_TARGET_ROLES } = require('../../../shared/constants/notificationConstants');
 const AppError = require('../../../shared/utils/AppError');
 
 /**
@@ -257,6 +259,20 @@ const createReview = async (userId, data) => {
 
         if (targetType === REVIEW_TARGET_TYPE.TUTOR && resolvedTutorId) {
             tutorStats = await recalculateTutorRating(resolvedTutorId, t);
+
+            // Notify Tutor of new review
+            TutorProfile.findByPk(resolvedTutorId).then(tutor => {
+                if (tutor && tutor.userId) {
+                    createNotification({
+                        userId: tutor.userId,
+                        targetRole: NOTIFICATION_TARGET_ROLES.TUTOR,
+                        type: NOTIFICATION_TYPES.REVIEW,
+                        title: 'New Review Received',
+                        message: `You received a ${numRating}-star review: "${(comment || '').slice(0, 80)}"`,
+                        data: { tutorId: resolvedTutorId, rating: numRating },
+                    }).catch(() => {});
+                }
+            }).catch(() => {});
         } else if (targetType === REVIEW_TARGET_TYPE.PARENT && resolvedParentId) {
             parentStats = await recalculateParentRating(resolvedParentId, t);
         }

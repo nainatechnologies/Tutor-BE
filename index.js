@@ -125,6 +125,28 @@ const ensureSchemaUpdates = async (sequelize) => {
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
             `);
         }
+
+        const hasNotifications = tables.some(t => (typeof t === 'string' ? t : t.tableName || '').toLowerCase() === 'notifications');
+        if (!hasNotifications) {
+            await sequelize.query(`
+                CREATE TABLE IF NOT EXISTS \`notifications\` (
+                    \`id\` CHAR(36) NOT NULL PRIMARY KEY,
+                    \`userId\` CHAR(36) NULL,
+                    \`targetRole\` ENUM('PARENT', 'TUTOR', 'ADMIN', 'ALL') NOT NULL DEFAULT 'ALL',
+                    \`type\` ENUM('CONNECTION', 'APPOINTMENT', 'PAYMENT', 'REVIEW', 'COMPLAINT', 'REGISTRATION', 'SYSTEM') NOT NULL,
+                    \`title\` VARCHAR(255) NOT NULL,
+                    \`message\` TEXT NOT NULL,
+                    \`data\` JSON NULL,
+                    \`isRead\` TINYINT(1) NOT NULL DEFAULT 0,
+                    \`createdAt\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    \`updatedAt\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX \`idx_notif_userId\` (\`userId\`),
+                    INDEX \`idx_notif_targetRole\` (\`targetRole\`),
+                    INDEX \`idx_notif_isRead\` (\`isRead\`),
+                    INDEX \`idx_notif_createdAt\` (\`createdAt\`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            `);
+        }
     } catch (err) {
         console.warn('Schema migration check:', err.message);
     }

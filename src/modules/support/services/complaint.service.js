@@ -2,6 +2,8 @@ const { Op } = require('sequelize');
 const { Complaint, User, ParentProfile, TutorProfile, Appointment } = require('../../users/models');
 const AppError = require('../../../shared/utils/AppError');
 const { COMPLAINT_CATEGORY } = require('../constants/complaint.constants');
+const { createNotification } = require('../../notifications/services/notification.service');
+const { NOTIFICATION_TYPES, NOTIFICATION_TARGET_ROLES } = require('../../../shared/constants/notificationConstants');
 
 const CATEGORY_LABEL_MAP = {
     [COMPLAINT_CATEGORY.TUTOR_BEHAVIOR]: 'Teaching Quality & Conduct',
@@ -54,6 +56,15 @@ const createComplaint = async (reporterId, data) => {
         description: data.description.trim(),
         status: 'OPEN'
     });
+
+    // Notify Admin of new complaint
+    createNotification({
+        targetRole: NOTIFICATION_TARGET_ROLES.ADMIN,
+        type: NOTIFICATION_TYPES.COMPLAINT,
+        title: 'New Complaint Filed',
+        message: `New complaint filed: "${data.subject.trim()}".`,
+        data: { complaintId: complaint.id },
+    }).catch(err => console.warn('Notification trigger error:', err.message));
 
     return complaint;
 };
@@ -203,6 +214,21 @@ const updateComplaintStatus = async (id, { status, resolutionNotes }) => {
     }
 
     await complaint.update(updates);
+
+    // Notify Reporter of complaint status update
+    if (status) {
+        createNotification({
+            userId: complaint.reporterId,
+            targetRole: NOTIFICATION_TARGET_ROLES.ALL,
+            type: NOTIFICATION_TYPES.COMPLAINT,
+            title: `Complaint Status Updated: ${status}`,
+            message: resolutionNotes
+                ? `Your complaint "${complaint.subject}" has been marked as ${status}. Admin notes: ${resolutionNotes}`
+                : `Your complaint "${complaint.subject}" has been marked as ${status}.`,
+            data: { complaintId: complaint.id, status },
+        }).catch(err => console.warn('Notification trigger error:', err.message));
+    }
+
     return complaint;
 };
 

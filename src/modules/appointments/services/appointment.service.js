@@ -8,6 +8,8 @@ const {
     Subject,
 } = require('../../users/models');
 const AppError = require('../../../shared/utils/AppError');
+const { createNotification } = require('../../notifications/services/notification.service');
+const { NOTIFICATION_TYPES, NOTIFICATION_TARGET_ROLES } = require('../../../shared/constants/notificationConstants');
 
 /**
  * Create a new appointment booking (by Parent)
@@ -56,6 +58,18 @@ const createAppointment = async (userId, data) => {
         notes: data.notes || null,
         status: 'REQUESTED',
     });
+
+    // Notify Tutor
+    if (tutor.userId) {
+        createNotification({
+            userId: tutor.userId,
+            targetRole: NOTIFICATION_TARGET_ROLES.TUTOR,
+            type: NOTIFICATION_TYPES.APPOINTMENT,
+            title: 'New Session Requested',
+            message: `${parent.fullName || 'A parent'} requested a new tutoring session.`,
+            data: { appointmentId: appointment.id },
+        }).catch(err => console.warn('Notification trigger error:', err.message));
+    }
 
     return await getAppointmentDetailsById(appointment.id);
 };
@@ -217,6 +231,22 @@ const updateAppointmentStatus = async (id, user, updateData) => {
             by: 1,
             where: { id: appointment.tutorId },
         });
+    }
+
+    // Notify Parent on appointment status update
+    if (updateData.status && updateData.status !== previousStatus) {
+        ParentProfile.findByPk(appointment.parentId).then(parent => {
+            if (parent && parent.userId) {
+                createNotification({
+                    userId: parent.userId,
+                    targetRole: NOTIFICATION_TARGET_ROLES.PARENT,
+                    type: NOTIFICATION_TYPES.APPOINTMENT,
+                    title: `Session ${updateData.status.toLowerCase()}`,
+                    message: `Your tutoring session status is now ${updateData.status}.`,
+                    data: { appointmentId: appointment.id, status: updateData.status },
+                }).catch(() => {});
+            }
+        }).catch(() => {});
     }
 
     return await getAppointmentDetailsById(appointment.id);

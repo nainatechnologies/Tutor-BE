@@ -11,6 +11,8 @@ const {
     USER_ROLES,
     USER_STATUSES
 } = require('../../../shared/constants/userConstants');
+const { createNotification } = require('../../notifications/services/notification.service');
+const { NOTIFICATION_TYPES, NOTIFICATION_TARGET_ROLES } = require('../../../shared/constants/notificationConstants');
 
 /**
  * Format a TutorProfile database record into the Admin Frontend TutorRegistration shape.
@@ -175,6 +177,22 @@ const updateRegistrationStatus = async (tutorProfileId, { status, rejectionReaso
     }
 
     await tutor.save();
+
+    // Notify Tutor of approval/rejection
+    if (tutor.userId) {
+        const isApproved = status === 'Accepted' || status === 'approved';
+        createNotification({
+            userId: tutor.userId,
+            targetRole: NOTIFICATION_TARGET_ROLES.TUTOR,
+            type: NOTIFICATION_TYPES.REGISTRATION,
+            title: isApproved ? 'Profile Approved!' : 'Registration Update',
+            message: isApproved
+                ? 'Congratulations! Your tutor profile has been approved. You can now accept student bookings.'
+                : `Your registration request was rejected: ${rejectionReason || 'Please review your details.'}`,
+            data: { tutorProfileId, status },
+        }).catch(() => {});
+    }
+
     return formatTutorRegistration(tutor);
 };
 
