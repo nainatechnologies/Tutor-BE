@@ -1,0 +1,1836 @@
+{
+  "info": {
+    "name": "Nurtiva Tutor Platform API",
+    "description": "Complete, production-ready Postman collection for Nurtiva Tutor Platform (Parent, Tutor, Admin). Automatically captures and applies Bearer JWT token on login.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5001",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Master Data",
+      "description": "**Purpose:** Public taxonomies for dropdowns, search filters, and profile registration.\n**Access Level:** 🌐 Public.\n",
+      "item": [
+        {
+          "name": "Get all active categories with their subjects",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/master/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "master",
+                "categories"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "**Purpose:** Public taxonomies for dropdowns, search filters, and profile registration.\n**Access Level:** 🌐 Public.\n"
+          },
+          "response": []
+        },
+        {
+          "name": "List all categories (Admin view including inactive)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/master/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "master",
+                "categories"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "**Access Level:** 🛡️ ADMIN ONLY.\n"
+          },
+          "response": []
+        },
+        {
+          "name": "Create a new educational category",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/master/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "master",
+                "categories"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "**Access Level:** 🛡️ ADMIN ONLY.\n",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Languages\",\n  \"description\": \"Foreign and regional language studies\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add a new subject to a category",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/master/categories/:categoryId/subjects",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "master",
+                "categories",
+                ":categoryId",
+                "subjects"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "categoryId",
+                  "value": "1",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "**Access Level:** 🛡️ ADMIN ONLY.\n",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"French\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "description": "**Purpose:** Returns platform-wide aggregate counts: total registered tutors, approved tutors, active parents,\nconnections initiated, appointments completed, and total platform revenue.\n**Access Level:** 🛡️ ADMIN ONLY.\n",
+      "item": [
+        {
+          "name": "Retrieve executive dashboard KPIs & metrics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/dashboard/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "dashboard",
+                "stats"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "**Purpose:** Returns platform-wide aggregate counts: total registered tutors, approved tutors, active parents,\nconnections initiated, appointments completed, and total platform revenue.\n**Access Level:** 🛡️ ADMIN ONLY.\n"
+          },
+          "response": []
+        },
+        {
+          "name": "Get detailed financial analytics & revenue breakdowns",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/revenue/analytics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "revenue",
+                "analytics"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "**Purpose:** Returns monthly and weekly revenue trends, transaction volume, and coin package distributions.\n**Access Level:** 🛡️ ADMIN ONLY.\n"
+          },
+          "response": []
+        },
+        {
+          "name": "List tutor registration and verification requests",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/registration-requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "registration-requests"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "",
+                  "description": "Filter by approval status."
+                }
+              ],
+              "variable": []
+            },
+            "description": "**Purpose:** Lists all tutors awaiting review, their submitted qualifications, subjects, and ID proofs.\n**Access Level:** 🛡️ ADMIN ONLY.\n"
+          },
+          "response": []
+        },
+        {
+          "name": "Approve or reject a tutor verification request",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/registration-requests/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "registration-requests",
+                ":id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "**Purpose:** Approves a tutor (making their profile publicly searchable) or rejects with a reason.\n**Access Level:** 🛡️ ADMIN ONLY.\n",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"APPROVED\",\n  \"rejectionReason\": \"Qualification certificates are unclear. Please re-upload.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "View all parent-tutor connection leads",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/leads",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "leads"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "**Purpose:** Displays platform-wide lead interactions, matchmaking rates, and conversation statuses.\n**Access Level:** 🛡️ ADMIN ONLY.\n"
+          },
+          "response": []
+        },
+        {
+          "name": "Platform payment transaction history",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/payments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "payments"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "**Purpose:** Returns comprehensive list of all Razorpay payment records, amounts, statuses, and user accounts.\n**Access Level:** 🛡️ ADMIN ONLY.\n"
+          },
+          "response": []
+        },
+        {
+          "name": "Moderate review visibility (Publish or Hide)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/reviews/:id/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "reviews",
+                ":id",
+                "status"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "**Purpose:** Allows administrators to toggle a review's status between `published` and `hidden` to prevent spam/abuse.\n**Access Level:** 🛡️ ADMIN ONLY.\n",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"hidden\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Resolve or update complaint ticket status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/complaints/:id/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "complaints",
+                ":id",
+                "status"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "**Purpose:** Admin resolves a complaint ticket and attaches resolution notes.\n**Access Level:** 🛡️ ADMIN ONLY.\n",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"RESOLVED\",\n  \"resolutionNotes\": \"Contacted tutor, session has been rescheduled and 50 coins refunded.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "description": "**Purpose:** Returns paginated list of notification alerts (new connections, appointments booked, wallet top-ups).\n**Access Level:** 🔒 Authenticated Session.\n",
+      "item": [
+        {
+          "name": "Retrieve user's in-app notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications"
+              ],
+              "query": [
+                {
+                  "key": "unreadOnly",
+                  "value": "",
+                  "description": "If true, only returns unread notifications."
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": ""
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": ""
+                }
+              ],
+              "variable": []
+            },
+            "description": "**Purpose:** Returns paginated list of notification alerts (new connections, appointments booked, wallet top-ups).\n**Access Level:** 🔒 Authenticated Session.\n"
+          },
+          "response": []
+        },
+        {
+          "name": "Get total count of unread notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/unread-count",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "unread-count"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "**Purpose:** Lightweight endpoint for badge counters on notification bell icons.\n**Access Level:** 🔒 Authenticated Session.\n"
+          },
+          "response": []
+        },
+        {
+          "name": "Mark all user notifications as read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/read-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "read-all"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "**Purpose:** Sets `isRead: true` across all notifications for the current user.\n**Access Level:** 🔒 Authenticated Session.\n"
+          },
+          "response": []
+        },
+        {
+          "name": "Mark specific notification as read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/:id/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                ":id",
+                "read"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "**Purpose:** Marks a single notification item as read when clicked.\n**Access Level:** 🔒 Authenticated Session.\n"
+          },
+          "response": []
+        },
+        {
+          "name": "Connect to real-time Server-Sent Events (SSE) stream",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/stream",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "stream"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "**Purpose:** Establishes a persistent SSE connection to receive live push alerts instantly without polling.\n**Access Level:** 🔒 Authenticated Session.\n"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Support",
+      "description": "**Purpose:** Allows parents or tutors to raise a support issue (e.g. appointment dispute, billing inquiry, tutor conduct).\n**Access Level:** 🔒 Authenticated Session (PARENT or TUTOR).\n",
+      "item": [
+        {
+          "name": "Submit a new support complaint or ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/complaints",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "complaints"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "**Purpose:** Allows parents or tutors to raise a support issue (e.g. appointment dispute, billing inquiry, tutor conduct).\n**Access Level:** 🔒 Authenticated Session (PARENT or TUTOR).\n",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"BILLING\",\n  \"targetId\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n  \"description\": \"Tutor did not attend the scheduled online session.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List complaints submitted by logged-in user",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/complaints/my",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "complaints",
+                "my"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "**Purpose:** Returns status updates and admin responses for all tickets filed by this user.\n**Access Level:** 🔒 Authenticated Session.\n"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reviews",
+      "description": "**Purpose:** Returns all approved and published reviews for a tutor, including individual ratings,\nwritten feedback, subjects, and tutor public replies.\n**Access Level:** 🌐 Public.\n",
+      "item": [
+        {
+          "name": "Get public reviews & ratings distribution for a tutor",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/reviews/tutors/:tutorId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reviews",
+                "tutors",
+                ":tutorId"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "tutorId",
+                  "value": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "**Purpose:** Returns all approved and published reviews for a tutor, including individual ratings,\nwritten feedback, subjects, and tutor public replies.\n**Access Level:** 🌐 Public.\n"
+          },
+          "response": []
+        },
+        {
+          "name": "Get featured platform testimonials for landing page",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/reviews/testimonials",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reviews",
+                "testimonials"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "**Purpose:** Returns highest-rated platform testimonials to showcase on public marketing pages.\n**Access Level:** 🌐 Public.\n"
+          },
+          "response": []
+        },
+        {
+          "name": "Submit a review and rating",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/reviews",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reviews"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "**Purpose:** Allows a Parent to rate a Tutor (1 to 5 stars) after a completed appointment,\nor allows any user to submit platform feedback. Automatically recalculates the tutor's average rating.\n**Access Level:** 🔒 Authenticated Session (PARENT).\n",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tutorId\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n  \"appointmentId\": \"a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d\",\n  \"rating\": 5,\n  \"comment\": \"Outstanding teaching style and very patient.\",\n  \"subject\": \"Mathematics\",\n  \"targetType\": \"TUTOR\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Tutor or Parent reply to a received review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/reviews/:id/reply",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reviews",
+                ":id",
+                "reply"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "**Purpose:** Allows the tutor to write a public response to feedback received on their profile.\n**Access Level:** 🔒 Authenticated Session.\n",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reply\": \"Thank you! It is a pleasure working with Aarav.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Appointments",
+      "description": "**Purpose:** Returns all scheduled appointments.\n- If **Parent**: Returns booked sessions, tutor profiles, dates, and modes.\n- If **Tutor**: Returns student appointments, parent contact details, and locations.\n**Access Level:** 🔒 Authenticated Session (PARENT or TUTOR).\n",
+      "item": [
+        {
+          "name": "Get appointments for the authenticated user",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/appointments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "appointments"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "CONFIRMED",
+                  "description": "Filter by status."
+                }
+              ],
+              "variable": []
+            },
+            "description": "**Purpose:** Returns all scheduled appointments.\n- If **Parent**: Returns booked sessions, tutor profiles, dates, and modes.\n- If **Tutor**: Returns student appointments, parent contact details, and locations.\n**Access Level:** 🔒 Authenticated Session (PARENT or TUTOR).\n"
+          },
+          "response": []
+        },
+        {
+          "name": "Book a new tutoring appointment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/appointments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "appointments"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "**Purpose:** Allows a Parent to book a tutoring appointment with a connected tutor for a specific child, date, and time.\n**Access Level:** 👨‍👩‍👧 PARENT ONLY.\n",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tutorId\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n  \"childId\": \"c1b2a3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d\",\n  \"date\": \"2026-10-25\",\n  \"startTime\": \"16:00\",\n  \"endTime\": \"17:00\",\n  \"subject\": \"Mathematics\",\n  \"mode\": \"ONLINE\",\n  \"notes\": \"Please focus on derivative problems from chapter 4.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Retrieve single appointment details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/appointments/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "appointments",
+                ":id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "**Purpose:** Returns complete details for a specific appointment.\n**Access Level:** 🔒 Authenticated Session.\n"
+          },
+          "response": []
+        },
+        {
+          "name": "Update appointment status (Confirm, Complete, or Cancel)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/appointments/:id/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "appointments",
+                ":id",
+                "status"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "**Purpose:** Updates the appointment lifecycle.\n- Tutor can confirm (`CONFIRMED`) or complete (`COMPLETED`).\n- Either party can cancel (`CANCELLED`) with a cancellation reason.\n**Access Level:** 🔒 Authenticated Session.\n",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"CONFIRMED\",\n  \"meetingLink\": \"https://meet.google.com/xyz-abcd-efg\",\n  \"cancellationReason\": \"Schedule conflict due to school exams.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Wallet",
+      "description": "**Purpose:** Returns the user's available coin balance, expiry dates, and full historical credit/debit transactions.\n**Access Level:** 🔒 Authenticated Session (PARENT).\n",
+      "item": [
+        {
+          "name": "Retrieve live coin balance and transaction ledger",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/wallet/balance",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "wallet",
+                "balance"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "**Purpose:** Returns the user's available coin balance, expiry dates, and full historical credit/debit transactions.\n**Access Level:** 🔒 Authenticated Session (PARENT).\n"
+          },
+          "response": []
+        },
+        {
+          "name": "Get available coin purchase packages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/wallet/packages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "wallet",
+                "packages"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "**Purpose:** Returns available coin bundles with prices in INR, bonus coins, and validity duration.\n**Access Level:** 🔒 Authenticated Session.\n"
+          },
+          "response": []
+        },
+        {
+          "name": "Top up wallet with coins (internal or after payment confirmation)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/wallet/topup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "wallet",
+                "topup"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "**Purpose:** Credits coins to the user's wallet with validity calculation and transaction ledger creation.\n**Access Level:** 🔒 Authenticated Session.\n",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"coins\": 100,\n  \"packageId\": \"pkg_basic_50\",\n  \"paymentId\": \"pay_TrHea99812bca\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Atomically deduct coins from wallet",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/wallet/deduct",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "wallet",
+                "deduct"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "**Purpose:** Deducts coins for platform actions (e.g., unlocking contact details). Ensures atomic safety against race conditions.\n**Access Level:** 🔒 Authenticated Session.\n",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"coins\": 50,\n  \"reason\": \"Connection request to Tutor\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "description": "**Purpose:** Initiates a payment session by generating an official `order_id` via the Razorpay API.\nThe frontend uses this `order_id` to launch the Razorpay Checkout modal.\n**Access Level:** 🔒 Authenticated Session (PARENT).\n",
+      "item": [
+        {
+          "name": "Create a Razorpay payment order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/create-order",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments",
+                "create-order"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "**Purpose:** Initiates a payment session by generating an official `order_id` via the Razorpay API.\nThe frontend uses this `order_id` to launch the Razorpay Checkout modal.\n**Access Level:** 🔒 Authenticated Session (PARENT).\n",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 500,\n  \"currency\": \"INR\",\n  \"packageId\": \"pkg_starter_50\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Razorpay payment signature & credit wallet",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments",
+                "verify"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "**Purpose:** Cryptographically verifies the `razorpay_signature` generated by Razorpay using HMAC SHA256\nwith the `RAZORPAY_KEY_SECRET`. Upon verification, the user's wallet is credited with coins automatically.\n**Access Level:** 🔒 Authenticated Session.\n",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"razorpay_order_id\": \"order_TrHdfKK9yU7bwS\",\n  \"razorpay_payment_id\": \"pay_TrHea99812bca\",\n  \"razorpay_signature\": \"9a2f7c4e5b6d7a8e9f0c1b2a3d4e5f6a...\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Handle Razorpay bank redirect callback",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/callback",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments",
+                "callback"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "**Purpose:** Webhook/callback endpoint called by the user's bank after 3D-Secure OTP verification.\nRedirects the user back to the frontend success or failure page.\n**Access Level:** 🌐 Public (Invoked by Razorpay / Bank Gateway).\n"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Connections",
+      "description": "**Purpose:** Returns all connection relationships for the authenticated user.\n- If **Parent**: Returns requested tutors, connection statuses, and unlocked contact info.\n- If **Tutor**: Returns student connection leads, messages, and parent contact details.\n**Access Level:** 🔒 Authenticated Session (PARENT or TUTOR).\n",
+      "item": [
+        {
+          "name": "Get list of active and pending connections",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/connections",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "connections"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "**Purpose:** Returns all connection relationships for the authenticated user.\n- If **Parent**: Returns requested tutors, connection statuses, and unlocked contact info.\n- If **Tutor**: Returns student connection leads, messages, and parent contact details.\n**Access Level:** 🔒 Authenticated Session (PARENT or TUTOR).\n"
+          },
+          "response": []
+        },
+        {
+          "name": "Request new connection or update connection status",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/connections",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "connections"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "**Purpose:** Dual-action connection endpoint:\n1. **Parent Requesting Tutor:** Pass `tutorId`, `subject`, and optional `message`.\n   Deducts 50 coins from Parent wallet automatically.\n2. **Tutor Responding to Request:** Pass `connectionId` and `status` (`ACCEPTED` or `REJECTED`).\n**Access Level:** 🔒 Authenticated Session.\n",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tutorId\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n  \"subject\": \"Mathematics\",\n  \"message\": \"Looking for in-person tutoring on weekends\",\n  \"connectionId\": \"b2a1c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d\",\n  \"status\": \"ACCEPTED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "description": "**Purpose:** Returns profile details of the logged-in user. If PARENT, returns parent details and registered children.\nIf TUTOR, returns professional bio, hourly rate, pincode, and subjects.\n**Access Level:** 🔒 Authenticated Session (PARENT, TUTOR, or ADMIN).\n",
+      "item": [
+        {
+          "name": "Retrieve currently authenticated user profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "profile"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "**Purpose:** Returns profile details of the logged-in user. If PARENT, returns parent details and registered children.\nIf TUTOR, returns professional bio, hourly rate, pincode, and subjects.\n**Access Level:** 🔒 Authenticated Session (PARENT, TUTOR, or ADMIN).\n"
+          },
+          "response": []
+        },
+        {
+          "name": "Update profile details (Universal for Parent or Tutor)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "profile"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "**Purpose:** Updates personal information, location, pincode, city, bio, and associated child profiles.\n**Access Level:** 🔒 Authenticated Session (PARENT or TUTOR).\n",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dr. Sarah Smith\",\n  \"city\": \"Khammam\",\n  \"pincode\": \"507122\",\n  \"location\": \"Khammam, Telangana, 507122\",\n  \"headline\": \"Special Educator & Senior Math Tutor\",\n  \"bio\": \"Experienced educator with 10+ years specializing in personalized learning.\",\n  \"hourlyRate\": 600,\n  \"teachingMode\": \"BOTH\",\n  \"children\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload file (avatar, certificate, ID proof) to Cloudinary",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/upload",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "upload"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "**Purpose:** Uploads multipart binary file to Cloudinary cloud storage under folder `tutor_platform_media`\nand returns the permanent HTTPS secure URL.\n**Access Level:** 🔒 Authenticated Session.\n",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get tutor portal dashboard metrics & analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/tutor/analytics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "tutor",
+                "analytics"
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "30d",
+                  "description": "Time period for analytics aggregation."
+                }
+              ],
+              "variable": []
+            },
+            "description": "**Purpose:** Returns high-level metrics for the logged-in tutor: total profile views, active leads,\ncompleted appointments, and average rating.\n**Access Level:** 🎓 TUTOR ONLY.\n"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Search",
+      "description": "**Purpose:** Searches tutors based on location, pincode, subject, category, teaching mode, and budget.\nBasic profile cards are public for SEO, while contact details (email/phone) are masked until a connection is unlocked.\n**Access Level:** 🌐 Public (Accessible to parents, guests, and authenticated users).\n",
+      "item": [
+        {
+          "name": "Search & filter approved tutors in marketplace",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/search/tutors",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "search",
+                "tutors"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "Mathematics",
+                  "description": "Keyword search matching tutor name, headline, bio, or location."
+                },
+                {
+                  "key": "location",
+                  "value": "Khammam",
+                  "description": "City or location name."
+                },
+                {
+                  "key": "pincode",
+                  "value": "507122",
+                  "description": "6-digit postal code."
+                },
+                {
+                  "key": "categoryId",
+                  "value": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+                  "description": "Filter by master category UUID."
+                },
+                {
+                  "key": "subjectId",
+                  "value": "2b3c4d5e-6f7a-8b9c-0d1e-2f3a4b5c6d7e",
+                  "description": "Filter by master subject UUID."
+                },
+                {
+                  "key": "mode",
+                  "value": "BOTH",
+                  "description": "Preferred teaching delivery mode."
+                },
+                {
+                  "key": "minFee",
+                  "value": "300",
+                  "description": "Minimum hourly fee in INR."
+                },
+                {
+                  "key": "maxFee",
+                  "value": "1500",
+                  "description": "Maximum hourly fee in INR."
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Pagination page number."
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Number of tutors per page."
+                }
+              ],
+              "variable": []
+            },
+            "description": "**Purpose:** Searches tutors based on location, pincode, subject, category, teaching mode, and budget.\nBasic profile cards are public for SEO, while contact details (email/phone) are masked until a connection is unlocked.\n**Access Level:** 🌐 Public (Accessible to parents, guests, and authenticated users).\n"
+          },
+          "response": []
+        },
+        {
+          "name": "Retrieve detailed public profile of a specific tutor",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/search/tutors/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "search",
+                "tutors",
+                ":id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "e1b2c3d4-5f6a-7b8c-9d0e-1f2a3b4c5d6e",
+                  "description": "Tutor User UUID or Profile UUID."
+                }
+              ]
+            },
+            "description": "**Purpose:** Returns comprehensive professional details of a tutor including educational qualifications,\nsubjects taught, bio, hourly rate, and teaching mode. Contact information remains protected.\n**Access Level:** 🌐 Public.\n"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "description": "**Purpose:** Creates a new user in the platform. Supports registering as either a `PARENT` or `TUTOR`.\nIf registering as a Tutor, an automated onboarding profile and approval request is initialized.\n**Access Level:** 🌐 Public (No authentication required).\n",
+      "item": [
+        {
+          "name": "Register a new Parent or Tutor account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "**Purpose:** Creates a new user in the platform. Supports registering as either a `PARENT` or `TUTOR`.\nIf registering as a Tutor, an automated onboarding profile and approval request is initialized.\n**Access Level:** 🌐 Public (No authentication required).\n",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dr. Sarah Smith\",\n  \"email\": \"tutor1@gmail.com\",\n  \"phone\": \"9876543210\",\n  \"password\": \"Password@123\",\n  \"role\": \"TUTOR\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.data && jsonData.data.token) {",
+                  "        pm.collectionVariables.set('token', jsonData.data.token);",
+                  "        console.log('JWT Token captured and saved to collection variable {{token}}');",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Authenticate user & retrieve JWT token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "**Purpose:** Authenticates user using email or phone and password. Generates a secure JWT token valid for 7 days.\n**Access Level:** 🌐 Public.\n",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"tutor1@gmail.com\",\n  \"password\": \"Password@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.data && jsonData.data.token) {",
+                  "        pm.collectionVariables.set('token', jsonData.data.token);",
+                  "        console.log('JWT Token captured and saved to collection variable {{token}}');",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Send OTP to phone for registration or password reset",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/send-otp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "send-otp"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "**Purpose:** Generates a 6-digit one-time password and delivers it via the configured SMS gateway (SPEAR UC).\n**Access Level:** 🌐 Public.\n",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"9876543210\",\n  \"action\": \"REGISTRATION\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reset account password using verified OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/reset-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "reset-password"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "**Purpose:** Updates user password after successfully verifying the OTP sent to their phone number.\n**Access Level:** 🌐 Public.\n",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"9876543210\",\n  \"otp\": \"123456\",\n  \"newPassword\": \"NewPassword@2026\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Change password for active authenticated session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/change-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "change-password"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "**Purpose:** Allows logged-in users (Parents, Tutors, Admins) to update their account password by providing their current password.\n**Access Level:** 🔒 Authenticated Session (Any Role).\n",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"Password@123\",\n  \"newPassword\": \"UpdatedSecret@2026\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "End authenticated session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "logout"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "**Purpose:** Safely logs out the user and signals the client to discard the JWT token.\n**Access Level:** 🌐 Optional Auth (Idempotent).\n"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

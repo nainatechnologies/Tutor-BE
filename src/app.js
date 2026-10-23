@@ -30,6 +30,10 @@ app.use(express.urlencoded({ extended: true }));
 // --- Swagger Documentation ---
 const { swaggerUi, specs } = require('./config/swagger');
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+app.get('/api-docs.json', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(specs);
+});
 
 // --- Routes ---
 const authRoutes = require('./modules/auth/routes/auth.routes');
