@@ -155,25 +155,41 @@ const sendOtp = async (phone, action, email = null) => {
         if (!existingUser) throw new AppError('No account found with this phone number.', 404);
     }
 
-    // 3. 30-second cooldown check
+    // 3. Layer 3: Rolling 24-hour daily cap per phone number (max 5 SMS / 24 hours)
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const dailyCount = await OtpCode.count({
+        where: {
+            phoneNumber: phone,
+            createdAt: {
+                [sequelize.Sequelize.Op.gte]: twentyFourHoursAgo
+            }
+        }
+    });
+
+    const MAX_DAILY_SMS = 5;
+    if (dailyCount >= MAX_DAILY_SMS) {
+        throw new AppError('Daily SMS limit reached for this phone number (max 5 per 24 hours). Please try again after 24 hours.', 429);
+    }
+
+    // 4. Layer 2: 60-second cooldown check per phone number
     const lastOtp = await OtpCode.findOne({
-        where: { phoneNumber: phone, action },
+        where: { phoneNumber: phone },
         order: [['createdAt', 'DESC']]
     });
 
     if (lastOtp) {
         const secondsSinceLast = (new Date() - lastOtp.createdAt) / 1000;
-        if (secondsSinceLast < 30) {
-            throw new AppError(`Please wait ${Math.ceil(30 - secondsSinceLast)} seconds before requesting a new OTP.`, 429);
+        if (secondsSinceLast < 60) {
+            throw new AppError(`Please wait ${Math.ceil(60 - secondsSinceLast)} seconds before requesting a new OTP.`, 429);
         }
     }
 
-    // 4. Generate and Hash OTP
+    // 5. Generate and Hash OTP
     const rawOtp = otpUtils.generateOtp();
     const otpHash = await otpUtils.hashOtp(rawOtp);
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 mins from now
 
-    // 5. Save to DB
+    // 6. Save to DB
     await OtpCode.create({
         phoneNumber: phone,
         otpHash,
@@ -181,7 +197,7 @@ const sendOtp = async (phone, action, email = null) => {
         expiresAt
     });
 
-    // 6. Send SMS
+    // 7. Send SMS
     await otpUtils.sendSms(phone, rawOtp, action);
     
     return true;
@@ -209,9 +225,11 @@ const verifyOtp = async (phone, providedOtp, action, deleteRecord = true) => {
         throw new AppError('Invalid OTP code.', 400);
     }
 
-    // 4. Delete the OTP record so it can't be reused, unless explicitly told not to (e.g., for pre-verification)
+    // 4. Invalidate the OTP record so it cannot be reused, while preserving it for 24h SMS rate limiting
     if (deleteRecord) {
-        await latestOtpRecord.destroy();
+        latestOtpRecord.expiresAt = new Date(0);
+        latestOtpRecord.otpHash = 'INVALIDATED_AFTER_USE';
+        await latestOtpRecord.save();
     }
 
     return true;

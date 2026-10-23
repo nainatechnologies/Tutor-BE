@@ -9,6 +9,8 @@
 const crypto = require('crypto');
 const sequelize = require('../../../config/database');
 const { Wallet, WalletTransaction, User, ParentProfile, Payment } = require('../../users/models');
+const { createNotification } = require('../../notifications/services/notification.service');
+const { NOTIFICATION_TYPES } = require('../../../shared/constants/notificationConstants');
 const AppError = require('../../../shared/utils/AppError');
 const {
     TRANSACTION_TYPE,
@@ -280,6 +282,23 @@ const topupWallet = async (userId, roleOrPayload, maybePayload) => {
         }
 
         await t.commit();
+
+        try {
+            await createNotification({
+                userId,
+                type: NOTIFICATION_TYPES.PAYMENT,
+                title: 'Coins Purchased Successfully',
+                message: `Your payment was verified. ${totalCoinsAwarded} Coins have been added to your wallet!`,
+                data: {
+                    packageId: pkg.id,
+                    coinsAdded: totalCoinsAwarded,
+                    balance: newBalance,
+                    paymentId: razorpayPaymentId,
+                },
+            });
+        } catch (notifErr) {
+            console.warn('Wallet topup notification dispatch warning:', notifErr.message);
+        }
 
         return {
             wallet: {

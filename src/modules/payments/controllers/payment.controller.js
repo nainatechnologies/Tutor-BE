@@ -128,7 +128,7 @@ const handleCallback = async (req, res) => {
             error,
         } = data;
 
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        const frontendUrl = data.frontendUrl || process.env.FRONTEND_URL || 'http://localhost:5173';
         const redirectPath = data.redirect || '/tutor/leads';
 
         if (error || !razorpay_payment_id) {
@@ -175,21 +175,64 @@ const handleCallback = async (req, res) => {
         }
 
         if (userId) {
-            const walletService = require('../../wallet/services/wallet.service');
+            // 1. Record in payments table if not already recorded
+            try {
+                const existingPay = await Payment.findOne({ where: { razorpayPaymentId: razorpay_payment_id } });
+                if (!existingPay) {
+                    const isRegFee = (payment && payment.amount === 69900) || packageId === 'cp_growth';
+                    await Payment.create({
+                        userId,
+                        amount: payment ? payment.amount / 100 : 699.00,
+                        currency: 'INR',
+                        status: Payment.STATUS.SUCCESS,
+                        type: isRegFee ? Payment.TYPE.REGISTRATION_FEE : Payment.TYPE.WALLET_TOPUP,
+                        razorpayOrderId: razorpay_order_id,
+                        razorpayPaymentId: razorpay_payment_id,
+                        razorpaySignature: razorpay_signature || '',
+                    });
+                }
+            } catch (payErr) {
+                console.error('Failed to write to payments table in callback:', payErr);
+            }
+
+            // 2. Mark parent registration fee paid & add wallet coins
             const normalizedRole = (role || 'tutor').toLowerCase();
-            await walletService.topupWallet(userId, normalizedRole, {
-                packageId: packageId || 'plan-3m',
-                razorpayOrderId: razorpay_order_id,
-                razorpayPaymentId: razorpay_payment_id,
-                razorpaySignature: razorpay_signature,
-            });
+            if (normalizedRole === 'parent') {
+                try {
+                    const profile = await ParentProfile.findOne({ where: { userId } });
+                    if (profile) {
+                        profile.isRegistrationFeePaid = true;
+                        profile.walletBalance = (profile.walletBalance || 0) + 400;
+                        await profile.save();
+                    }
+                } catch (profErr) {
+                    console.error('Failed to update parent profile in callback:', profErr);
+                }
+            }
+
+            // 3. Top up wallet
+            try {
+                const walletService = require('../../wallet/services/wallet.service');
+                await walletService.topupWallet(userId, normalizedRole, {
+                    packageId: packageId || (payment && payment.amount === 69900 ? 'cp_growth' : 'plan-3m'),
+                    razorpayOrderId: razorpay_order_id,
+                    razorpayPaymentId: razorpay_payment_id,
+                    razorpaySignature: razorpay_signature,
+                });
+            } catch (wErr) {
+                console.warn('Wallet topup sync warning in callback:', wErr.message);
+            }
         }
 
-        return res.redirect(`${frontendUrl}${redirectPath}?payment_status=success&payment_id=${razorpay_payment_id}`);
+        const successRedirect = redirectPath.includes('?') 
+            ? `${redirectPath}&payment_status=success&payment_id=${razorpay_payment_id}`
+            : `${redirectPath}?payment_status=success&payment_id=${razorpay_payment_id}`;
+
+        return res.redirect(`${frontendUrl}${successRedirect}`);
     } catch (err) {
         console.error('Payment callback error:', err);
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-        return res.redirect(`${frontendUrl}/tutor/leads?payment_status=error&message=${encodeURIComponent(err.message)}`);
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5174';
+        return res.redirect(`${frontendUrl}/register?payment_status=error&message=${encodeURIComponent(err.message)}`);
     }
 };
 

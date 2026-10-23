@@ -9,6 +9,7 @@ const { otpRateLimiter, authRateLimiter } = require('../../../shared/middlewares
 
 router.post(
     '/register',
+    authRateLimiter,
     validate(registerSchema),
     authController.register
 );

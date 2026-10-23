@@ -167,6 +167,9 @@ const startServer = async () => {
         // Listen using the server, not the Express app
         server.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
+            // Initialize automated background cron schedules (daily database backups)
+            const { initScheduledJobs } = require('./src/shared/services/cron.service');
+            initScheduledJobs();
         });
     } catch (error) {
         console.error('Failed to start server:', error);

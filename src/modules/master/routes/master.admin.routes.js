@@ -14,19 +14,13 @@ const {
 
 const router = express.Router();
 
-const validateRequest = (paramsSchema, bodySchema, controller) => (req, res, next) => {
-    const runBody = () => (bodySchema ? validate(bodySchema)(req, res, next) : controller(req, res, next));
-    if (paramsSchema) return validate(paramsSchema, 'params')(req, res, runBody);
-    return runBody();
-};
-
 router.use(protect);
 router.use(requireRole('admin', 'ADMIN'));
 
 router.get('/categories', masterController.getCategories);
 router.post('/categories', validate(createCategorySchema), masterController.createCategory);
-router.patch('/categories/:categoryId', validateRequest(categoryIdParamsSchema, updateCategorySchema, masterController.updateCategory));
-router.post('/categories/:categoryId/subjects', validateRequest(categoryIdParamsSchema, createSubjectSchema, masterController.createSubject));
-router.patch('/subjects/:subjectId', validateRequest(subjectIdParamsSchema, updateSubjectSchema, masterController.updateSubject));
+router.patch('/categories/:categoryId', validate(categoryIdParamsSchema, 'params'), validate(updateCategorySchema), masterController.updateCategory);
+router.post('/categories/:categoryId/subjects', validate(categoryIdParamsSchema, 'params'), validate(createSubjectSchema), masterController.createSubject);
+router.patch('/subjects/:subjectId', validate(subjectIdParamsSchema, 'params'), validate(updateSubjectSchema), masterController.updateSubject);
 
 module.exports = router;

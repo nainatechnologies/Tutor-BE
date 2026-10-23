@@ -6,10 +6,19 @@ const connectionRequestSchema = z.object({
 });
 
 const updateConnectionSchema = z.object({
-    status: z.enum(['ACCEPTED', 'REJECTED']),
+    connectionId: z.string().uuid("Invalid connection ID"),
+    status: z.enum(['ACCEPTED', 'REJECTED'], {
+        errorMap: () => ({ message: "Status must be either ACCEPTED or REJECTED" }),
+    }),
 });
+
+const manageConnectionSchema = z.union([
+    connectionRequestSchema,
+    updateConnectionSchema,
+]);
 
 module.exports = {
     connectionRequestSchema,
     updateConnectionSchema,
+    manageConnectionSchema,
 };

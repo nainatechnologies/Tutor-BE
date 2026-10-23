@@ -193,6 +193,22 @@ const updateAdminProfile = async (req, res, next) => {
     }
 };
 
+/**
+ * Controller to fetch dynamic revenue analytics.
+ * GET /api/admin/revenue/analytics
+ */
+const getRevenueAnalytics = async (req, res, next) => {
+    try {
+        const analytics = await adminService.getRevenueAnalytics(req.query);
+        res.status(200).json({
+            success: true,
+            data: analytics,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     getRegistrationRequests,
     updateRegistrationStatus,
@@ -205,5 +221,6 @@ module.exports = {
     updateAppointment,
     getAdminProfile,
     updateAdminProfile,
+    getRevenueAnalytics,
 };
 

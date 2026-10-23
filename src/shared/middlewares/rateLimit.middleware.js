@@ -5,9 +5,11 @@ const AppError = require('../utils/AppError');
 // Max 5 requests per 15 minutes per IP
 const otpRateLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Increased for testing
+    max: 5, // Max 5 requests per 15 minutes per IP
+    standardHeaders: true,
+    legacyHeaders: false,
     handler: (req, res, next) => {
-        next(new AppError('Too many OTP requests from this IP. Please try again after 15 minutes.', 429));
+        next(new AppError('Too many OTP requests from this IP address. Please try again after 15 minutes.', 429));
     }
 });
 

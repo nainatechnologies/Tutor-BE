@@ -1,0 +1,3 @@
+# Railway deployment configuration to include MySQL/MariaDB client tools for automated backups
+[phases.setup]
+nixPkgs = ["...", "mariadb"]

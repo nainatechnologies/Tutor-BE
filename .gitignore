@@ -3,3 +3,7 @@ node_modules/
 
 # Mock Data Scripts
 scripts/
+
+# Database Snapshots (Never commit SQL dumps to Git)
+backups/*
+!backups/.gitkeep

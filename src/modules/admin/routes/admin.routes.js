@@ -58,6 +58,12 @@ router.get(
     adminController.getDashboardStats
 );
 
+// GET /api/admin/revenue/analytics
+router.get(
+    '/revenue/analytics',
+    adminController.getRevenueAnalytics
+);
+
 // GET /api/admin/leads
 router.get(
     '/leads',
