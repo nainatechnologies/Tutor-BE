@@ -15,8 +15,12 @@ const options = {
         },
         servers: [
             {
+                url: '/',
+                description: 'Current Server (Auto-adapts to Production or Localhost)',
+            },
+            {
                 url: `http://localhost:${process.env.PORT || 5001}`,
-                description: 'Development server',
+                description: 'Local Development Server',
             },
         ],
         components: {
