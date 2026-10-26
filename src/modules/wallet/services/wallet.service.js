@@ -24,9 +24,10 @@ const {
  * Finds or initializes an active wallet for a given user within a transaction.
  * @param {string} userId
  * @param {object} [t] Optional Sequelize transaction
+ * @param {boolean} [forTopup=false] When true, new wallets start at 0 coins so topupWallet can credit without duplication
  * @returns {Promise<Wallet>}
  */
-const getOrCreateWallet = async (userId, t = null) => {
+const getOrCreateWallet = async (userId, t = null, forTopup = false) => {
     const isTx = t && typeof t === 'object' && t.commit;
     let wallet = await Wallet.findOne({
         where: { userId },
@@ -48,8 +49,9 @@ const getOrCreateWallet = async (userId, t = null) => {
             // Ignored
         }
 
-        if (isTutor) {
-            // Tutors start with 0 coins and must subscribe to a plan to unlock leads
+        if (isTutor || forTopup) {
+            // Tutors or new wallets initialized during a package top-up start clean at 0 coins.
+            // topupWallet will award the exact purchased package coins without double-counting.
             wallet = await Wallet.create({
                 userId,
                 balance: 0,
@@ -212,7 +214,7 @@ const topupWallet = async (userId, roleOrPayload, maybePayload) => {
 
     const t = await sequelize.transaction();
     try {
-        const wallet = await getOrCreateWallet(userId, t);
+        const wallet = await getOrCreateWallet(userId, t, true);
 
         if (wallet.status === WALLET_STATUS.FROZEN) {
             throw new AppError('Wallet is frozen. Please contact support.', 403);
@@ -225,7 +227,7 @@ const topupWallet = async (userId, roleOrPayload, maybePayload) => {
 
         // Carry-Forward Rule:
         // If active, rollover all existing coins and add package coins
-        // If expired, reset base balance to package coins
+        // If expired or fresh (balance 0), reset base balance to package coins
         const newBalance = isWithinValidity
             ? (wallet.balance + totalCoinsAwarded)
             : totalCoinsAwarded;
@@ -239,6 +241,16 @@ const topupWallet = async (userId, roleOrPayload, maybePayload) => {
             balance: newBalance,
             validUntil: newValidUntil,
         }, { transaction: t });
+
+        // Keep ParentProfile walletBalance in sync if parent user
+        try {
+            await ParentProfile.update(
+                { walletBalance: newBalance },
+                { where: { userId }, transaction: t }
+            );
+        } catch {
+            // Ignored if model not present
+        }
 
         const txn = await WalletTransaction.create({
             walletId: wallet.id,

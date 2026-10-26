@@ -66,12 +66,11 @@ const verifyPayment = async (req, res, next) => {
                 console.error('Failed to write to payments table:', payErr);
             }
 
-            // 2. THE GUARANTEE: Credit 400 coins to the parent's unified wallet and mark profile paid
+            // 2. Mark parent registration fee paid & credit package coins via walletService
             if (req.user && (req.user.role || '').toUpperCase() === 'PARENT') {
                 const profile = await ParentProfile.findOne({ where: { userId: req.user.id } });
                 if (profile) {
                     profile.isRegistrationFeePaid = true;
-                    profile.walletBalance = (profile.walletBalance || 0) + 400;
                     await profile.save();
                 }
 
@@ -85,19 +84,6 @@ const verifyPayment = async (req, res, next) => {
                 } catch (walletErr) {
                     console.error('Wallet topup sync warning:', walletErr.message);
                 }
-            }
-
-            // Real-time notification for successful payment
-            try {
-                await createNotification({
-                    userId: req.user.id,
-                    type: NOTIFICATION_TYPES.PAYMENT,
-                    title: 'Payment Successful',
-                    message: 'Your payment was verified successfully. 400 Coins have been credited to your wallet!',
-                    data: { razorpayPaymentId: razorpay_payment_id },
-                });
-            } catch (notifErr) {
-                console.warn('Failed to dispatch payment notification:', notifErr.message);
             }
 
             res.status(200).json({
@@ -195,14 +181,13 @@ const handleCallback = async (req, res) => {
                 console.error('Failed to write to payments table in callback:', payErr);
             }
 
-            // 2. Mark parent registration fee paid & add wallet coins
+            // 2. Mark parent registration fee paid & credit package coins via walletService
             const normalizedRole = (role || 'tutor').toLowerCase();
             if (normalizedRole === 'parent') {
                 try {
                     const profile = await ParentProfile.findOne({ where: { userId } });
                     if (profile) {
                         profile.isRegistrationFeePaid = true;
-                        profile.walletBalance = (profile.walletBalance || 0) + 400;
                         await profile.save();
                     }
                 } catch (profErr) {
