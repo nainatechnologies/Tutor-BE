@@ -160,9 +160,15 @@ const loginUser = async (identifier, password) => {
     if (user.role === 'PARENT') {
         const profile = await ParentProfile.findOne({ where: { userId: user.id } });
         if (profile && profile.city && profile.district) isProfileComplete = true;
-    } else if (user.role === 'TUTOR') {
+    } else if (user.role === 'TUTOR' || user.role === 'tutor') {
         const profile = await TutorProfile.findOne({ where: { userId: user.id } });
-        if (profile && profile.city && profile.aadharNumber) isProfileComplete = true;
+        if (profile && (
+            profile.approvalStatus === 'approved' ||
+            profile.approvalStatus === 'Approved' ||
+            (profile.city && (profile.pincode || profile.qualification || profile.aadharNumber))
+        )) {
+            isProfileComplete = true;
+        }
     } else if (user.role === 'admin' || user.role === 'ADMIN') {
         isProfileComplete = true;
     }

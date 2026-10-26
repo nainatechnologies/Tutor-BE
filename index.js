@@ -147,6 +147,13 @@ const ensureSchemaUpdates = async (sequelize) => {
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
             `);
         }
+
+        // Expand rciNumber to VARCHAR(20) to support full RCI formats (e.g. CRR123456) without truncation
+        try {
+            await sequelize.query("ALTER TABLE `tutor_profiles` MODIFY COLUMN `rciNumber` VARCHAR(20) NULL;");
+        } catch (rciErr) {
+            // Silently continue if column already updated or table pending creation
+        }
     } catch (err) {
         console.warn('Schema migration check:', err.message);
     }

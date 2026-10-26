@@ -19,9 +19,19 @@ const registerTutorSchema = z.object({
     qualification: z.string().optional(),
     experience: z.union([z.string(), z.number()]).optional(),
     specialization: z.string().optional(),
-    rciNumber: z.string().optional(),
+    rciNumber: z.string().max(20).optional(),
     rciValidityDate: z.string().optional(),
     subjects: z.array(z.string()).optional(),
+    perSessionFee: z.union([z.string(), z.number()]).optional(),
+    sessionFee: z.union([z.string(), z.number()]).optional(),
+    teachingModes: z.array(z.string()).optional(),
+    mode: z.string().optional(),
+    availability: z.any().optional(),
+    avatarUrl: z.string().optional(),
+    aadharNumber: z.string().optional(),
+    aadharDocUrl: z.string().optional(),
+    qualCertUrl: z.string().optional(),
+    rciCertUrl: z.string().optional(),
 });
 
 const getRegistrationRequestsSchema = z.object({

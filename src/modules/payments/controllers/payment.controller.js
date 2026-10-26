@@ -67,7 +67,7 @@ const verifyPayment = async (req, res, next) => {
             }
 
             // 2. THE GUARANTEE: Credit 400 coins to the parent's unified wallet and mark profile paid
-            if (req.user && req.user.role === 'PARENT') {
+            if (req.user && (req.user.role || '').toUpperCase() === 'PARENT') {
                 const profile = await ParentProfile.findOne({ where: { userId: req.user.id } });
                 if (profile) {
                     profile.isRegistrationFeePaid = true;

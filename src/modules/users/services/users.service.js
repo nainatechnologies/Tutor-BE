@@ -4,8 +4,9 @@ const AppError = require('../../../shared/utils/AppError');
 // 1. Get Logged-In User Profile
 const getUserProfile = async (userId, role) => {
     let profile = null;
+    const normalizedRole = (role || '').toUpperCase();
 
-    if (role === 'PARENT') {
+    if (normalizedRole === 'PARENT') {
         profile = await ParentProfile.findOne({
             where: { userId },
             include: [
@@ -28,7 +29,7 @@ const getUserProfile = async (userId, role) => {
                 }
             ]
         });
-    } else if (role === 'TUTOR') {
+    } else if (normalizedRole === 'TUTOR') {
         profile = await TutorProfile.findOne({
             where: { userId },
             include: [
@@ -56,7 +57,8 @@ const getUserProfile = async (userId, role) => {
 
 // 2. Update Profile (Handles both PARENT with children, and TUTOR)
 const updateProfile = async (userId, role, updateData) => {
-    if (role === 'PARENT') {
+    const normalizedRole = (role || '').toUpperCase();
+    if (normalizedRole === 'PARENT') {
         const profile = await ParentProfile.findOne({ where: { userId } });
         if (!profile) throw new AppError('Parent profile not found', 404);
 
@@ -90,7 +92,7 @@ const updateProfile = async (userId, role, updateData) => {
             }
         }
         return profile;
-    } else if (role === 'TUTOR') {
+    } else if (normalizedRole === 'TUTOR') {
         const profile = await TutorProfile.findOne({ where: { userId } });
         if (!profile) throw new AppError('Tutor profile not found', 404);
         

@@ -73,10 +73,10 @@ const TutorProfile = sequelize.define('TutorProfile', {
         defaultValue: PROFESSIONAL_TYPES.TEACHER,
     },
     rciNumber: {
-        type: DataTypes.STRING(6),
+        type: DataTypes.STRING(20),
         allowNull: true,
         validate: {
-            len: [0, 6]
+            len: [0, 20]
         }
     },
     rciValidityDate: {

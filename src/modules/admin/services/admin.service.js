@@ -3,6 +3,7 @@ const { Op, QueryTypes } = require('sequelize');
 const sequelize = require('../../../config/database');
 const { User, TutorProfile, ParentProfile, ChildProfile, Subject, Connection, Payment, WalletTransaction, AdminProfile } = require('../../users/models');
 const { walletService } = require('../../wallet/services/wallet.service');
+const { PARENT_COIN_PACKAGES, TUTOR_COIN_PACKAGES } = require('../../wallet/constants/wallet.constants');
 const AppError = require('../../../shared/utils/AppError');
 const {
     APPROVAL_STATUSES,
@@ -216,6 +217,16 @@ const registerTutorByAdmin = async (data) => {
         rciNumber,
         rciValidityDate,
         subjects = [],
+        sessionFee,
+        perSessionFee,
+        mode,
+        teachingModes,
+        availability,
+        avatarUrl,
+        aadharNumber,
+        aadharDocUrl,
+        qualCertUrl,
+        rciCertUrl,
     } = data;
 
     if (!name || !email || !phone) {
@@ -250,11 +261,38 @@ const registerTutorByAdmin = async (data) => {
         // Parse experience numeric
         const expYears = parseFloat(experience) || (experience ? parseFloat(experience.replace(/[^\d.]/g, '')) || 0 : 0);
 
+        // Parse fee and modes
+        const feeVal = perSessionFee || sessionFee || 0;
+        const parsedFee = parseFloat(feeVal) || 0;
+
+        let modes = ['online'];
+        if (Array.isArray(teachingModes) && teachingModes.length > 0) {
+            modes = teachingModes;
+        } else if (mode) {
+            if (mode === 'both') modes = ['online', 'home', 'center'];
+            else if (mode === 'offline') modes = ['home', 'center'];
+            else modes = [mode];
+        }
+
+        // Normalize availability to [{ day: string, slots: string[] }]
+        let normalizedAvailability = [];
+        if (Array.isArray(availability)) {
+            normalizedAvailability = availability;
+        } else if (typeof availability === 'string' && availability.trim()) {
+            try {
+                const parsed = JSON.parse(availability);
+                if (Array.isArray(parsed)) normalizedAvailability = parsed;
+                else normalizedAvailability = [{ day: 'All Days', slots: [availability] }];
+            } catch {
+                normalizedAvailability = [{ day: 'All Days', slots: [availability] }];
+            }
+        }
+
         // 2. Create TutorProfile (Approved immediately because created by Admin)
         const tutor = await TutorProfile.create({
             userId: user.id,
             fullName: name,
-            avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0046C0&color=fff`,
+            avatarUrl: avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0046C0&color=fff`,
             city: city || 'Hyderabad',
             pincode: pincode || '500001',
             location: location || `${city || 'Hyderabad'}, ${pincode || '500001'}`,
@@ -263,11 +301,19 @@ const registerTutorByAdmin = async (data) => {
             professionalType: professionalType || PROFESSIONAL_TYPES.TEACHER,
             qualification: qualification || 'Qualified Professional',
             experienceYears: expYears,
+            aadharNumber: aadharNumber || null,
+            aadharDocUrl: aadharDocUrl || null,
+            qualCertUrl: qualCertUrl || null,
             rciNumber: rciNumber || null,
             rciValidityDate: rciValidityDate || null,
+            rciCertUrl: rciCertUrl || null,
             approvalStatus: APPROVAL_STATUSES.APPROVED,
             verified: true,
             areasOfPractice: specialization ? specialization.split(',').map(s => s.trim()) : [],
+            perSessionFee: parsedFee,
+            monthlyEstimateFee: parsedFee * 8,
+            teachingModes: modes,
+            availability: normalizedAvailability,
         }, { transaction: t });
 
         // 3. Link Subjects by IDs or Names
@@ -506,11 +552,51 @@ const getAdminPayments = async (query = {}) => {
         order: [['createdAt', 'DESC']],
     });
 
+    // Fetch matching wallet transactions for these payments to get actual credited coins
+    const razorpayPaymentIds = payments.map(p => p.razorpayPaymentId).filter(Boolean);
+    const orderIds = payments.map(p => p.razorpayOrderId).filter(Boolean);
+
+    const walletTxns = await WalletTransaction.findAll({
+        where: {
+            [Op.or]: [
+                { referenceId: razorpayPaymentIds },
+                { referenceId: orderIds },
+            ],
+        },
+    });
+
+    const getPackageCoins = (amount, role) => {
+        const amt = Math.round(parseFloat(amount) || 0);
+        if (role === 'tutor') {
+            const pkg = TUTOR_COIN_PACKAGES.find(tp => tp.price === amt);
+            if (pkg) return pkg.coins + (pkg.bonus || 0);
+            if (amt === 1398) return 270;
+            if (amt === 4800) return 1200;
+        } else {
+            const pkg = PARENT_COIN_PACKAGES.find(pp => pp.price === amt);
+            if (pkg) return pkg.coins + (pkg.bonus || 0);
+            if (amt === 299) return 150;
+            if (amt === 699) return 400;
+            if (amt === 1299) return 900;
+        }
+        return amt;
+    };
+
     let data = payments.map((p) => {
-        const isParent = p.user?.role === 'PARENT';
+        const isParent = (p.user?.role || '').toUpperCase() === 'PARENT';
+        const role = isParent ? 'parent' : 'tutor';
         const userName = isParent
             ? (p.user?.parentProfile?.fullName || p.user?.email || 'Parent User')
             : (p.user?.tutorProfile?.fullName || p.user?.email || 'Tutor User');
+
+        const matchedTxn = walletTxns.find(tx =>
+            (p.razorpayPaymentId && tx.referenceId === p.razorpayPaymentId) ||
+            (p.razorpayOrderId && tx.referenceId === p.razorpayOrderId)
+        );
+
+        const coinsCredited = matchedTxn
+            ? Math.abs(matchedTxn.amount)
+            : getPackageCoins(p.amount, role);
 
         return {
             id: p.id,
@@ -520,7 +606,7 @@ const getAdminPayments = async (query = {}) => {
             professionalName: isParent ? 'Platform Direct' : userName,
             bookingId: p.razorpayOrderId || p.id.slice(0, 8),
             amount: parseFloat(p.amount) || 0,
-            coins: Math.round(parseFloat(p.amount) || 0),
+            coins: coinsCredited,
             commission: Math.round((parseFloat(p.amount) || 0) * 0.1),
             tutorAmount: Math.round((parseFloat(p.amount) || 0) * 0.9),
             paymentMethod: p.razorpayPaymentId ? 'Razorpay Online' : 'Online Gateway',

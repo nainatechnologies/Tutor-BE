@@ -106,11 +106,12 @@ const getUserAppointments = async (user, filters = {}) => {
 
     const whereClause = {};
 
-    if (user.role === 'PARENT') {
+    const role = (user.role || '').toUpperCase();
+    if (role === 'PARENT') {
         const parent = await ParentProfile.findOne({ where: { userId: user.id } });
         if (!parent) throw new AppError('Parent profile not found', 404);
         whereClause.parentId = parent.id;
-    } else if (user.role === 'TUTOR') {
+    } else if (role === 'TUTOR') {
         const tutor = await TutorProfile.findOne({ where: { userId: user.id } });
         if (!tutor) throw new AppError('Tutor profile not found', 404);
         whereClause.tutorId = tutor.id;
