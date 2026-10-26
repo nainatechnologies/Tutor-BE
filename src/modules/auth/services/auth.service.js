@@ -5,6 +5,8 @@ const OtpCode = require('../../users/models/OtpCode');
 const sequelize = require('../../../config/database');
 const AppError = require('../../../shared/utils/AppError');
 const otpUtils = require('../../../shared/utils/otp.utils');
+const { createNotification } = require('../../notifications/services/notification.service');
+const { NOTIFICATION_TYPES, NOTIFICATION_TARGET_ROLES } = require('../../../shared/constants/notificationConstants');
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -88,6 +90,41 @@ const registerUser = async (data) => {
         }
 
         await transaction.commit();
+
+        // Proactively notify Admin of new registrations in real time
+        if (role === 'TUTOR') {
+            createNotification({
+                targetRole: NOTIFICATION_TARGET_ROLES.ADMIN,
+                type: NOTIFICATION_TYPES.REGISTRATION,
+                title: 'New Tutor Registration',
+                message: `New tutor "${name || email}" has registered from ${city || 'unspecified city'} (${pincode || 'no pincode'}) and is awaiting review & approval.`,
+                data: {
+                    userId: user.id,
+                    role: 'TUTOR',
+                    name: name || user.email,
+                    email: user.email,
+                    phone: user.phone,
+                    city,
+                    pincode,
+                },
+            }).catch((notifErr) => console.warn('[Auth Service] Admin tutor registration notification note:', notifErr.message));
+        } else if (role === 'PARENT') {
+            createNotification({
+                targetRole: NOTIFICATION_TARGET_ROLES.ADMIN,
+                type: NOTIFICATION_TYPES.REGISTRATION,
+                title: 'New Parent Registration',
+                message: `New parent "${name || email}" has registered from ${city || 'unspecified city'}.`,
+                data: {
+                    userId: user.id,
+                    role: 'PARENT',
+                    name: name || user.email,
+                    email: user.email,
+                    phone: user.phone,
+                    city,
+                    pincode,
+                },
+            }).catch((notifErr) => console.warn('[Auth Service] Admin parent registration notification note:', notifErr.message));
+        }
 
         const token = generateToken(user.id);
         return { user, token };
