@@ -570,8 +570,8 @@ const getAdminPayments = async (query = {}) => {
         if (role === 'tutor') {
             const pkg = TUTOR_COIN_PACKAGES.find(tp => tp.price === amt);
             if (pkg) return pkg.coins + (pkg.bonus || 0);
-            if (amt === 1398) return 270;
-            if (amt === 4800) return 1200;
+            if (amt === 1398) return 300;
+            if (amt === 4800) return 1500;
         } else {
             const pkg = PARENT_COIN_PACKAGES.find(pp => pp.price === amt);
             if (pkg) return pkg.coins + (pkg.bonus || 0);

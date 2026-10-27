@@ -61,8 +61,8 @@ const PARENT_COIN_PACKAGES = Object.freeze([
 ]);
 
 const TUTOR_COIN_PACKAGES = Object.freeze([
-    { id: 'plan-3m', name: '3 Month Plan', coins: 270, bonus: 0, price: 1398, validityDays: 90 },
-    { id: 'plan-12m', name: '12 Month Plan', coins: 1200, bonus: 0, price: 4800, validityDays: 365 },
+    { id: 'plan-3m', name: '3 Month Plan', coins: 300, bonus: 0, price: 1398, validityDays: 90 },
+    { id: 'plan-12m', name: '12 Month Plan', coins: 1500, bonus: 0, price: 4800, validityDays: 365 },
 ]);
 
 module.exports = {
