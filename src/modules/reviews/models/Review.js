@@ -60,9 +60,9 @@ const Review = sequelize.define('Review', {
     },
     status: {
         type: DataTypes.ENUM(Object.values(REVIEW_STATUS)),
-        defaultValue: REVIEW_STATUS.PUBLISHED,
+        defaultValue: REVIEW_STATUS.PENDING,
         allowNull: false,
-        comment: 'Moderation status: published or hidden'
+        comment: 'Moderation status: pending, published, or hidden'
     }
 }, {
     tableName: 'reviews',

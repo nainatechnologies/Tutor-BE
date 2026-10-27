@@ -159,7 +159,7 @@ const createReview = async (userId, data) => {
                     existingGeneralReview.rating = numRating;
                     existingGeneralReview.comment = comment || existingGeneralReview.comment;
                     if (subject) existingGeneralReview.subject = subject;
-                    existingGeneralReview.status = REVIEW_STATUS.PUBLISHED;
+                    existingGeneralReview.status = REVIEW_STATUS.PENDING;
                     await existingGeneralReview.save({ transaction: t });
 
                     const { averageRating, totalReviews } = await recalculateTutorRating(tutorId, t);
@@ -222,7 +222,7 @@ const createReview = async (userId, data) => {
                     existingGeneralReview.rating = numRating;
                     existingGeneralReview.comment = comment || existingGeneralReview.comment;
                     if (subject) existingGeneralReview.subject = subject;
-                    existingGeneralReview.status = REVIEW_STATUS.PUBLISHED;
+                    existingGeneralReview.status = REVIEW_STATUS.PENDING;
                     await existingGeneralReview.save({ transaction: t });
 
                     const { averageRating, totalReviews } = await recalculateParentRating(parentId, t);
@@ -249,7 +249,7 @@ const createReview = async (userId, data) => {
                 subject: subject || null,
                 rating: numRating,
                 comment: comment || null,
-                status: REVIEW_STATUS.PUBLISHED,
+                status: REVIEW_STATUS.PENDING,
             },
             { transaction: t }
         );
@@ -649,7 +649,7 @@ const getAdminReviews = async (query = {}) => {
  */
 const updateReviewStatusByAdmin = async (reviewId, newStatus) => {
     if (!Object.values(REVIEW_STATUS).includes(newStatus)) {
-        throw new AppError(`Status must be either '${REVIEW_STATUS.PUBLISHED}' or '${REVIEW_STATUS.HIDDEN}'`, 400);
+        throw new AppError(`Status must be one of: ${Object.values(REVIEW_STATUS).join(', ')}`, 400);
     }
 
     const review = await Review.findByPk(reviewId);

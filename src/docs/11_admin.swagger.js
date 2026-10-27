@@ -172,8 +172,8 @@
  *             properties:
  *               status:
  *                 type: string
- *                 enum: [published, hidden]
- *                 example: "hidden"
+ *                 enum: [pending, published, hidden]
+ *                 example: "published"
  *     responses:
  *       200:
  *         description: Review visibility updated.

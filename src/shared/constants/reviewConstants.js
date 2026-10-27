@@ -7,6 +7,7 @@ const REVIEW_TARGET_TYPE = Object.freeze({
 });
 
 const REVIEW_STATUS = Object.freeze({
+    PENDING: 'pending',
     PUBLISHED: 'published',
     HIDDEN: 'hidden',
 });
