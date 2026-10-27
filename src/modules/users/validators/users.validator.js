@@ -23,15 +23,15 @@ const childSchema = z.object({
 
 // Schema for updating parent profile
 const updateParentProfileSchema = z.object({
-    fullName: z.string().min(2, "Name must be at least 2 characters long").optional(),
-    city: z.string().min(2, "City is required").optional(),
-    pincode: z.string().regex(/^[0-9]{6}$/, "Pincode must be exactly 6 digits").optional(),
-    street: z.string().optional(),
-    district: z.string().optional(),
-    village: z.string().optional(),
-    mandal: z.string().optional(),
-    state: z.string().optional(),
-    landmark: z.string().optional(),
+    fullName: z.string().min(2, "Name must be at least 2 characters long").optional().or(z.literal('')),
+    city: z.string().min(2, "City is required").optional().or(z.literal('')),
+    pincode: z.string().regex(/^[0-9]{6}$/, "Pincode must be exactly 6 digits").optional().or(z.literal('')),
+    street: z.string().optional().or(z.literal('')),
+    district: z.string().optional().or(z.literal('')),
+    village: z.string().optional().or(z.literal('')),
+    mandal: z.string().optional().or(z.literal('')),
+    state: z.string().optional().or(z.literal('')),
+    landmark: z.string().optional().or(z.literal('')),
     children: z.array(childSchema).max(2, "A parent can register a maximum of 2 children").optional(),
 }).passthrough();
 

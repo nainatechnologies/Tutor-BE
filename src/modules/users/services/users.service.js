@@ -63,6 +63,11 @@ const updateProfile = async (userId, role, updateData) => {
         if (!profile) throw new AppError('Parent profile not found', 404);
 
         const { children, ...parentData } = updateData;
+        Object.keys(parentData).forEach(key => {
+            if (parentData[key] === '' || parentData[key] === null || parentData[key] === undefined) {
+                delete parentData[key];
+            }
+        });
         await profile.update(parentData);
 
         // Simple sync for children if provided in the payload
