@@ -54,7 +54,7 @@ const verifyPayment = async (req, res, next) => {
             try {
                 await Payment.create({
                     userId: req.user.id,
-                    amount: 699.00,
+                    amount: req.body.amount || 699.00,
                     currency: 'INR',
                     status: Payment.STATUS.SUCCESS,
                     type: Payment.TYPE.REGISTRATION_FEE,
@@ -74,11 +74,11 @@ const verifyPayment = async (req, res, next) => {
                     await profile.save();
                 }
 
-                // Credit the 400 coins to unified wallet with 180 days validity
+                // Credit the package coins to unified wallet with package validity
                 try {
                     const walletService = require('../../wallet/services/wallet.service');
                     await walletService.topupWallet(req.user.id, 'parent', {
-                        packageId: 'cp_growth',
+                        packageId: req.body.packageId || 'cp_growth',
                         razorpayPaymentId: razorpay_payment_id,
                     });
                 } catch (walletErr) {

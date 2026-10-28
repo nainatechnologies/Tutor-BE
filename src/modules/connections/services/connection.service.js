@@ -31,7 +31,7 @@ const requestConnection = async (parentId, tutorId, message) => {
             throw new AppError('You have already sent a connection request to this tutor. It is currently pending their approval.', 400);
         }
         if (connection.status === Connection.STATUS.ACCEPTED) {
-            throw new AppError('You are already connected with this tutor. You can message them directly.', 400);
+            throw new AppError('You are already connected with this tutor. You can view their contact details and call or WhatsApp them directly in My Connections.', 400);
         }
 
         // If previously REJECTED, allow parent to submit a new request
@@ -81,7 +81,7 @@ const requestConnection = async (parentId, tutorId, message) => {
 
 
 const getParentConnections = async (parentId) => {
-    return await Connection.findAll({
+    const connections = await Connection.findAll({
         where: { parentId },
         include: [{
             model: TutorProfile,
@@ -89,6 +89,22 @@ const getParentConnections = async (parentId) => {
             include: [{ model: User, as: 'user', attributes: ['id', 'email', 'phone'] }]
         }],
         order: [['createdAt', 'DESC']]
+    });
+
+    return connections.map(conn => {
+        const plain = conn.toJSON ? conn.toJSON() : { ...conn };
+        // Mask tutor direct contact info until tutor accepts request
+        if (plain.status !== Connection.STATUS.ACCEPTED) {
+            if (plain.tutor && plain.tutor.user) {
+                const rawPhone = plain.tutor.user.phone || '';
+                plain.tutor.user.phone = rawPhone ? rawPhone.slice(0, 5) + '*****' : '';
+                plain.tutor.user.email = '';
+            }
+            plain.isContactLocked = true;
+        } else {
+            plain.isContactLocked = false;
+        }
+        return plain;
     });
 };
 
@@ -98,7 +114,7 @@ const getTutorConnections = async (tutorProfileOrUserId) => {
         tutor = await TutorProfile.findOne({ where: { userId: tutorProfileOrUserId } });
     }
     const tutorId = tutor ? tutor.id : tutorProfileOrUserId;
-    return await Connection.findAll({
+    const connections = await Connection.findAll({
         where: { tutorId },
         include: [{
             model: ParentProfile,
@@ -106,6 +122,22 @@ const getTutorConnections = async (tutorProfileOrUserId) => {
             include: [{ model: User, as: 'user', attributes: ['id', 'email', 'phone'] }]
         }],
         order: [['createdAt', 'DESC']]
+    });
+
+    return connections.map(conn => {
+        const plain = conn.toJSON ? conn.toJSON() : { ...conn };
+        // If lead has NOT been unlocked/accepted by this tutor, mask parent's contact info
+        if (plain.status !== Connection.STATUS.ACCEPTED) {
+            if (plain.parent && plain.parent.user) {
+                const rawPhone = plain.parent.user.phone || '';
+                plain.parent.user.phone = rawPhone ? rawPhone.slice(0, 5) + '*****' : '';
+                plain.parent.user.email = '';
+            }
+            plain.isContactLocked = true;
+        } else {
+            plain.isContactLocked = false;
+        }
+        return plain;
     });
 };
 
@@ -122,6 +154,21 @@ const respondToConnection = async (connectionId, tutorId, status) => {
         throw new AppError('Connection request has already been processed', 400);
     }
 
+    const tutor = await TutorProfile.findByPk(tutorId);
+    if (!tutor) {
+        throw new AppError('Tutor profile not found', 404);
+    }
+
+    // BACKEND ENFORCEMENT: Deduct 30 coins from tutor's wallet when unlocking/accepting lead
+    if (status === Connection.STATUS.ACCEPTED) {
+        await walletService.deductCoins(tutor.userId, {
+            amount: COIN_COSTS.TUTOR_LEAD_COST,
+            type: TRANSACTION_TYPE.SPEND_LEAD_UNLOCK,
+            referenceId: connection.id,
+            description: `Unlocked lead for student connection #${connection.id.slice(0, 8)}`,
+        });
+    }
+
     connection.status = status;
     await connection.save();
 
@@ -134,6 +181,15 @@ const respondToConnection = async (connectionId, tutorId, status) => {
             description: 'Refund: Connection request rejected by tutor',
         });
     }
+
+    // Return the updated connection with parent contact details
+    const updated = await Connection.findByPk(connection.id, {
+        include: [{
+            model: ParentProfile,
+            as: 'parent',
+            include: [{ model: User, as: 'user', attributes: ['id', 'email', 'phone'] }]
+        }]
+    });
 
     // Notify parent of connection response
     try {
@@ -154,7 +210,7 @@ const respondToConnection = async (connectionId, tutorId, status) => {
         console.warn('Failed to dispatch connection response notification:', e?.message);
     }
 
-    return connection;
+    return updated || connection;
 };
 
 module.exports = {
