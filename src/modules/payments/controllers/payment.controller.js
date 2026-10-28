@@ -8,7 +8,7 @@ const { NOTIFICATION_TYPES } = require('../../../shared/constants/notificationCo
 const createOrder = async (req, res, next) => {
     try {
         const { amount, currency = 'INR', receipt = 'receipt_' + Date.now(), packageId } = req.body;
-        
+
         const options = {
             amount: amount * 100, // Razorpay works in paise (smallest unit)
             currency,
@@ -21,7 +21,7 @@ const createOrder = async (req, res, next) => {
         };
 
         const order = await razorpay.orders.create(options);
-        
+
         res.status(200).json({
             success: true,
             data: order
@@ -114,7 +114,7 @@ const handleCallback = async (req, res) => {
             error,
         } = data;
 
-        const frontendUrl = data.frontendUrl || process.env.FRONTEND_URL || 'http://localhost:5173';
+        const frontendUrl = data.frontendUrl || process.env.FRONTEND_URL;
         const redirectPath = data.redirect || '/tutor/leads';
 
         if (error || !razorpay_payment_id) {
@@ -209,14 +209,14 @@ const handleCallback = async (req, res) => {
             }
         }
 
-        const successRedirect = redirectPath.includes('?') 
+        const successRedirect = redirectPath.includes('?')
             ? `${redirectPath}&payment_status=success&payment_id=${razorpay_payment_id}`
             : `${redirectPath}?payment_status=success&payment_id=${razorpay_payment_id}`;
 
         return res.redirect(`${frontendUrl}${successRedirect}`);
     } catch (err) {
         console.error('Payment callback error:', err);
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5174';
+        const frontendUrl = process.env.FRONTEND_URL;
         return res.redirect(`${frontendUrl}/register?payment_status=error&message=${encodeURIComponent(err.message)}`);
     }
 };

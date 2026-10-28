@@ -50,23 +50,24 @@ const notificationRoutes = require('./modules/notifications/routes/notification.
 const adminRoutes = require('./modules/admin/routes/admin.routes');
 const adminMasterRoutes = require('./modules/master/routes/master.admin.routes');
 
-app.use('/api/auth', authRoutes);
-app.use('/api/master', masterRoutes);
-app.use('/api/users', usersRoutes);
-app.use('/api/connections', connectionRoutes);
-app.use('/api/payments', paymentRoutes);
-app.use('/api/search', searchRoutes);
-app.use('/api/wallet', walletRoutes);
-app.use('/api/appointments', appointmentRoutes);
-app.use('/api/reviews', reviewRoutes);
-app.use('/api/complaints', complaintRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/admin/catalog', adminMasterRoutes);
+// Mount routes with and without /api prefix for maximum compatibility
+app.use(['/api/auth', '/auth'], authRoutes);
+app.use(['/api/master', '/master'], masterRoutes);
+app.use(['/api/users', '/users'], usersRoutes);
+app.use(['/api/connections', '/connections'], connectionRoutes);
+app.use(['/api/payments', '/payments'], paymentRoutes);
+app.use(['/api/search', '/search'], searchRoutes);
+app.use(['/api/wallet', '/wallet'], walletRoutes);
+app.use(['/api/appointments', '/appointments'], appointmentRoutes);
+app.use(['/api/reviews', '/reviews'], reviewRoutes);
+app.use(['/api/complaints', '/complaints'], complaintRoutes);
+app.use(['/api/notifications', '/notifications'], notificationRoutes);
+app.use(['/api/admin', '/admin'], adminRoutes);
+app.use(['/api/admin/catalog', '/admin/catalog'], adminMasterRoutes);
 
-// Basic route to check if server is running
-app.get('/', (req, res) => {
-    res.json({ message: 'Tutor Backend API is running smoothly!' });
+// Basic routes to check if server is running
+app.get(['/', '/api'], (req, res) => {
+    res.json({ status: 'success', message: 'Tutor Backend API is running smoothly!' });
 });
 
 // Use global error handler (should be the last middleware)
