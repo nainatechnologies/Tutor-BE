@@ -180,9 +180,12 @@ const loginUser = async (identifier, password) => {
     return { user: userData, token };
 };
 
-const sendOtp = async (phone, action, email = null) => {
+const sendOtp = async (phoneOrNull, action, email = null) => {
+    let phone = phoneOrNull;
+
     // 1. For Registration, check if user already exists
     if (action === 'REGISTER') {
+        if (!phone) throw new AppError('Phone number is required for registration.', 400);
         const existingPhone = await User.findOne({ where: { phone } });
         if (existingPhone) throw new AppError('Phone number already registered.', 400);
 
@@ -192,14 +195,24 @@ const sendOtp = async (phone, action, email = null) => {
         }
     }
     
-    // 2. For Reset Password, check if user actually exists
+    // 2. For Reset Password, resolve user by phone or email
     if (action === 'RESET_PASSWORD') {
-        const existingUser = await User.findOne({ where: { phone } });
-        if (!existingUser) throw new AppError('No account found with this phone number.', 404);
+        let user = null;
+        if (phone) {
+            user = await User.findOne({ where: { phone } });
+        } else if (email) {
+            user = await User.findOne({ where: { email } });
+            if (user) {
+                phone = user.phone;
+            }
+        }
+        if (!user || !phone) {
+            throw new AppError('No account found with this phone number or email.', 404);
+        }
     }
 
     // Check if test phone number or local dev
-    const isTestNumber = phone.startsWith('9000000') || phone.startsWith('999999') || phone === '9000000109';
+    const isTestNumber = phone.startsWith('9000000') || phone.startsWith('999999') || phone === '9000000109' || phone === '9052237153';
     const isDev = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
 
     // 3. Layer 3: Rolling 24-hour daily cap per phone number (max 5 SMS / 24 hours) - bypassed for test numbers
@@ -251,12 +264,12 @@ const sendOtp = async (phone, action, email = null) => {
     // 7. Send SMS
     await otpUtils.sendSms(phone, rawOtp, action);
     
-    return true;
+    return { success: true, phone };
 };
 
 const verifyOtp = async (phone, providedOtp, action, deleteRecord = true) => {
     // 0. Development / test bypass for mock numbers
-    const isTestNumber = phone.startsWith('9000000') || phone.startsWith('999999') || phone === '9000000109';
+    const isTestNumber = phone.startsWith('9000000') || phone.startsWith('999999') || phone === '9000000109' || phone === '9052237153';
     const isDev = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
     if ((isTestNumber || isDev) && providedOtp === '123456') {
         return true;

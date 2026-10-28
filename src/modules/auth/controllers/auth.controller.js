@@ -25,8 +25,10 @@ const login = async (req, res, next) => {
 const sendOtp = async (req, res, next) => {
     try {
         const { phone, action, email } = req.body;
-        await authService.sendOtp(phone, action, email);
-        return sendSuccess(res, null, 'OTP sent successfully to your phone.', 200);
+        const result = await authService.sendOtp(phone, action, email);
+        const resolvedPhone = result?.phone || phone;
+        const maskedPhone = resolvedPhone ? `${resolvedPhone.slice(0, 3)}••••${resolvedPhone.slice(-3)}` : undefined;
+        return sendSuccess(res, { phone: resolvedPhone, maskedPhone }, 'OTP sent successfully to your phone.', 200);
     } catch (error) {
         next(error);
     }

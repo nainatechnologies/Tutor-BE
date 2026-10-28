@@ -8,7 +8,7 @@ const isTestOrDev = (req) => {
     const ip = req.ip || req.connection?.remoteAddress || '';
     const isLocalhost = ip.includes('127.0.0.1') || ip.includes('::1') || ip.includes('localhost') || ip === '::ffff:127.0.0.1';
     const phone = req.body?.phone || req.query?.phone || '';
-    const isTestPhone = phone.startsWith('9000000') || phone.startsWith('999999') || phone === '9000000109';
+    const isTestPhone = phone.startsWith('9000000') || phone.startsWith('999999') || phone === '9000000109' || phone === '9052237153';
     return (isDev && isLocalhost) || isTestPhone;
 };
 

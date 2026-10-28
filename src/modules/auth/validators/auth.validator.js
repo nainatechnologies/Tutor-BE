@@ -37,22 +37,33 @@ const loginSchema = z.object({
 });
 
 const sendOtpSchema = z.object({
-    phone: z.string().regex(/^[6-9][0-9]{9}$/, "Phone must be a valid 10-digit mobile number"),
-    email: z.string().email().optional(),
+    phone: z.string().regex(/^[6-9][0-9]{9}$/, "Phone must be a valid 10-digit mobile number").optional(),
+    email: z.string().email("Invalid email format").optional(),
     action: z.enum(['REGISTER', 'RESET_PASSWORD'])
+}).refine(data => data.phone || data.email, {
+    message: "Either phone number or email is required",
+    path: ["phone"]
 });
-
-
 
 const resetPasswordSchema = z.object({
     phone: z.string().regex(/^[6-9][0-9]{9}$/, "Phone must be a valid 10-digit mobile number"),
     otp: z.string().length(6, "OTP must be exactly 6 digits"),
-    newPassword: z.string().min(8, "Password must be at least 8 characters long")
+    newPassword: z.string()
+        .min(8, "Password must be at least 8 characters long")
+        .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+        .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+        .regex(/\d/, "Password must contain at least one number")
+        .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character")
 });
 
 const changePasswordSchema = z.object({
     currentPassword: z.string().min(1, "Current password is required"),
-    newPassword: z.string().min(8, "New password must be at least 8 characters long")
+    newPassword: z.string()
+        .min(8, "Password must be at least 8 characters long")
+        .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+        .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+        .regex(/\d/, "Password must contain at least one number")
+        .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character")
 }).refine(data => data.currentPassword !== data.newPassword, {
     message: "New password must be different from current password",
     path: ["newPassword"]
