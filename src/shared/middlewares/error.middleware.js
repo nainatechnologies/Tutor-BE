@@ -6,10 +6,11 @@ const errorHandler = (err, req, res, next) => {
     let message = err.message || 'Internal Server Error';
     let errors = err.errors || null;
 
-    // 1. Handle Zod validation errors
+    // 1. Handle Zod validation errors with clear, specific error messages
     if (err instanceof ZodError) {
         statusCode = 400;
-        message = 'Validation failed';
+        const firstIssue = err.issues && err.issues.length > 0 ? err.issues[0] : null;
+        message = firstIssue ? (firstIssue.message || `Invalid ${firstIssue.path.join('.')}`) : 'Validation failed';
         errors = err.issues.map(issue => ({
             field: issue.path.join('.'),
             message: issue.message,
@@ -19,15 +20,16 @@ const errorHandler = (err, req, res, next) => {
     // 2. Handle Sequelize Unique Constraint Error (e.g. duplicate email/phone)
     if (err.name === 'SequelizeUniqueConstraintError') {
         statusCode = 409;
-        message = 'A conflict occurred with the provided data.';
-        errors = null; // Do not expose raw database errors
+        const firstField = err.errors && err.errors[0] ? err.errors[0].path : 'record';
+        message = `A ${firstField} with this value already exists.`;
+        errors = err.errors ? err.errors.map(e => ({ field: e.path, message: e.message })) : null;
     }
 
     // 3. Handle Sequelize Validation Error
     if (err.name === 'SequelizeValidationError') {
         statusCode = 400;
-        message = 'Invalid data provided.';
-        errors = null; // Do not expose raw database errors
+        message = err.errors && err.errors[0] ? err.errors[0].message : 'Invalid data provided.';
+        errors = err.errors ? err.errors.map(e => ({ field: e.path, message: e.message })) : null;
     }
 
     // 4. Handle JWT Invalid Signature Error
