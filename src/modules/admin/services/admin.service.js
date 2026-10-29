@@ -852,6 +852,37 @@ const updateAdminProfile = async (adminUserId, payload) => {
         await profile.update(updateFields);
     }
 
+    // Sync phone number to the corresponding User record for authentication & OTPs
+    if (payload.phone) {
+        const cleanedPhone = payload.phone.replace(/\D/g, '').slice(-10);
+        if (cleanedPhone && cleanedPhone.length === 10) {
+            const targetUserId = adminUserId || profile?.userId;
+            let adminUser = null;
+            if (targetUserId) {
+                adminUser = await User.findByPk(targetUserId);
+            }
+            if (!adminUser) {
+                adminUser = await User.findOne({ where: { role: 'admin' } });
+            }
+
+            if (adminUser && adminUser.phone !== cleanedPhone) {
+                const existingUserWithPhone = await User.findOne({
+                    where: {
+                        phone: cleanedPhone,
+                        id: { [Op.ne]: adminUser.id },
+                    },
+                });
+                if (existingUserWithPhone) {
+                    throw new AppError('Phone number ' + cleanedPhone + ' is already in use by another user account (' + existingUserWithPhone.email + ').', 400);
+                }
+                await adminUser.update({ phone: cleanedPhone });
+                if (profile && !profile.userId) {
+                    await profile.update({ userId: adminUser.id });
+                }
+            }
+        }
+    }
+
     return {
         id: profile.id,
         businessName: profile.businessName,

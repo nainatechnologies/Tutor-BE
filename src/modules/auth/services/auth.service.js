@@ -212,7 +212,7 @@ const sendOtp = async (phoneOrNull, action, email = null) => {
     }
 
     // Check if test phone number or local dev
-    const isTestNumber = phone.startsWith('9000000') || phone.startsWith('999999') || phone === '9000000109' || phone === '9052237153';
+    const isTestNumber = phone.startsWith('9000000') || phone.startsWith('999999') || phone === '9000000109' || phone === '9052237153' || phone === '7997736688';
     const isDev = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
 
     // 3. Layer 3: Rolling 24-hour daily cap per phone number (max 5 SMS / 24 hours) - bypassed for test numbers
@@ -269,7 +269,7 @@ const sendOtp = async (phoneOrNull, action, email = null) => {
 
 const verifyOtp = async (phone, providedOtp, action, deleteRecord = true) => {
     // 0. Development / test bypass for mock numbers
-    const isTestNumber = phone.startsWith('9000000') || phone.startsWith('999999') || phone === '9000000109' || phone === '9052237153';
+    const isTestNumber = phone.startsWith('9000000') || phone.startsWith('999999') || phone === '9000000109' || phone === '9052237153' || phone === '7997736688';
     const isDev = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
     if ((isTestNumber || isDev) && providedOtp === '123456') {
         return true;
