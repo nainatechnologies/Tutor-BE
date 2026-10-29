@@ -104,12 +104,21 @@ const updateProfile = async (userId, role, updateData) => {
         const { subjectIds, ...tutorData } = updateData;
         await profile.update(tutorData);
 
-        if (subjectIds && subjectIds.length > 0) {
+        if (Array.isArray(subjectIds)) {
             await profile.setSubjects(subjectIds);
         }
         
         // Reload the profile to grab the newly attached subjects so they show up in the API response!
-        await profile.reload({ include: ['subjects'] });
+        await profile.reload({
+            include: [
+                {
+                    model: Subject,
+                    as: 'subjects',
+                    attributes: ['id', 'name'],
+                    through: { attributes: [] }
+                }
+            ]
+        });
         return profile;
     }
 };
