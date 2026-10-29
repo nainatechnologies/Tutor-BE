@@ -5,7 +5,6 @@ const {
     User,
     ParentProfile,
     TutorProfile,
-    Appointment,
 } = require('../../users/models');
 const { REVIEW_TARGET_TYPE, REVIEW_STATUS } = require('../../../shared/constants/reviewConstants');
 const { createNotification } = require('../../notifications/services/notification.service');
@@ -129,48 +128,32 @@ const createReview = async (userId, data) => {
 
         resolvedTutorId = tutorId;
 
-        // If reviewing through an appointment, enforce single review per appointment
-        if (appointmentId) {
-            const appointment = await Appointment.findByPk(appointmentId);
-            if (!appointment) {
-                throw new AppError('Appointment not found', 404);
-            }
+        // Check if user already wrote an active review for this tutor
+        const existingGeneralReview = await Review.findOne({
+            where: {
+                reviewerId: userId,
+                tutorId,
+                targetType: REVIEW_TARGET_TYPE.TUTOR,
+            },
+        });
 
-            const existingAptReview = await Review.findOne({
-                where: { appointmentId },
+        if (existingGeneralReview) {
+            // Update their existing review instead of creating duplicate clutter
+            return await sequelize.transaction(async (t) => {
+                existingGeneralReview.rating = numRating;
+                existingGeneralReview.comment = comment || existingGeneralReview.comment;
+                if (subject) existingGeneralReview.subject = subject;
+                existingGeneralReview.status = REVIEW_STATUS.PENDING;
+                await existingGeneralReview.save({ transaction: t });
+
+                const { averageRating, totalReviews } = await recalculateTutorRating(tutorId, t);
+
+                return {
+                    review: existingGeneralReview,
+                    updatedTutorRating: averageRating,
+                    updatedReviewCount: totalReviews,
+                };
             });
-            if (existingAptReview) {
-                throw new AppError('You have already submitted a review for this appointment', 409);
-            }
-        } else {
-            // General review without appointmentId: check if user already wrote an active review for this tutor
-            const existingGeneralReview = await Review.findOne({
-                where: {
-                    reviewerId: userId,
-                    tutorId,
-                    targetType: REVIEW_TARGET_TYPE.TUTOR,
-                    appointmentId: null,
-                },
-            });
-
-            if (existingGeneralReview) {
-                // Update their existing review instead of creating duplicate clutter
-                return await sequelize.transaction(async (t) => {
-                    existingGeneralReview.rating = numRating;
-                    existingGeneralReview.comment = comment || existingGeneralReview.comment;
-                    if (subject) existingGeneralReview.subject = subject;
-                    existingGeneralReview.status = REVIEW_STATUS.PENDING;
-                    await existingGeneralReview.save({ transaction: t });
-
-                    const { averageRating, totalReviews } = await recalculateTutorRating(tutorId, t);
-
-                    return {
-                        review: existingGeneralReview,
-                        updatedTutorRating: averageRating,
-                        updatedReviewCount: totalReviews,
-                    };
-                });
-            }
         }
     } else if (targetType === REVIEW_TARGET_TYPE.PARENT) {
         if (!parentId) {
@@ -189,51 +172,31 @@ const createReview = async (userId, data) => {
 
         resolvedParentId = parentId;
 
-        // If reviewing through an appointment
-        if (appointmentId) {
-            const appointment = await Appointment.findByPk(appointmentId);
-            if (!appointment) {
-                throw new AppError('Appointment not found', 404);
-            }
+        // Check if tutor already wrote an active review for this parent
+        const existingGeneralReview = await Review.findOne({
+            where: {
+                reviewerId: userId,
+                parentId,
+                targetType: REVIEW_TARGET_TYPE.PARENT,
+            },
+        });
 
-            const existingAptReview = await Review.findOne({
-                where: {
-                    reviewerId: userId,
-                    appointmentId,
-                    targetType: REVIEW_TARGET_TYPE.PARENT,
-                },
+        if (existingGeneralReview) {
+            return await sequelize.transaction(async (t) => {
+                existingGeneralReview.rating = numRating;
+                existingGeneralReview.comment = comment || existingGeneralReview.comment;
+                if (subject) existingGeneralReview.subject = subject;
+                existingGeneralReview.status = REVIEW_STATUS.PENDING;
+                await existingGeneralReview.save({ transaction: t });
+
+                const { averageRating, totalReviews } = await recalculateParentRating(parentId, t);
+
+                return {
+                    review: existingGeneralReview,
+                    updatedParentRating: averageRating,
+                    updatedReviewCount: totalReviews,
+                };
             });
-            if (existingAptReview) {
-                throw new AppError('You have already submitted a review for this parent for this appointment', 409);
-            }
-        } else {
-            // General review without appointmentId
-            const existingGeneralReview = await Review.findOne({
-                where: {
-                    reviewerId: userId,
-                    parentId,
-                    targetType: REVIEW_TARGET_TYPE.PARENT,
-                    appointmentId: null,
-                },
-            });
-
-            if (existingGeneralReview) {
-                return await sequelize.transaction(async (t) => {
-                    existingGeneralReview.rating = numRating;
-                    existingGeneralReview.comment = comment || existingGeneralReview.comment;
-                    if (subject) existingGeneralReview.subject = subject;
-                    existingGeneralReview.status = REVIEW_STATUS.PENDING;
-                    await existingGeneralReview.save({ transaction: t });
-
-                    const { averageRating, totalReviews } = await recalculateParentRating(parentId, t);
-
-                    return {
-                        review: existingGeneralReview,
-                        updatedParentRating: averageRating,
-                        updatedReviewCount: totalReviews,
-                    };
-                });
-            }
         }
     }
 
@@ -245,7 +208,6 @@ const createReview = async (userId, data) => {
                 targetType,
                 tutorId: resolvedTutorId,
                 parentId: resolvedParentId,
-                appointmentId: appointmentId || null,
                 subject: subject || null,
                 rating: numRating,
                 comment: comment || null,

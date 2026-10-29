@@ -1,5 +1,5 @@
 const { Op } = require('sequelize');
-const { Complaint, User, ParentProfile, TutorProfile, Appointment } = require('../../users/models');
+const { Complaint, User, ParentProfile, TutorProfile } = require('../../users/models');
 const AppError = require('../../../shared/utils/AppError');
 const { COMPLAINT_CATEGORY } = require('../constants/complaint.constants');
 const { createNotification } = require('../../notifications/services/notification.service');
@@ -37,19 +37,11 @@ const createComplaint = async (reporterId, data) => {
         }
     }
 
-    // Verify appointment if provided
-    let appointmentId = data.appointmentId || null;
-    if (appointmentId) {
-        const apt = await Appointment.findByPk(appointmentId);
-        if (!apt) {
-            appointmentId = null;
-        }
-    }
+    
 
     const complaint = await Complaint.create({
         reporterId,
         reportedId: targetUserId,
-        appointmentId,
         category: data.category,
         priority: data.priority || 'MEDIUM',
         subject: data.subject.trim(),
@@ -85,11 +77,7 @@ const getMyComplaints = async (userId) => {
                     { model: ParentProfile, as: 'parentProfile', attributes: ['id', 'fullName'] }
                 ]
             },
-            {
-                model: Appointment,
-                as: 'appointment'
-            }
-        ],
+                    ],
         order: [['createdAt', 'DESC']]
     });
 };
@@ -153,11 +141,7 @@ const getAdminComplaints = async (query = {}) => {
                     { model: ParentProfile, as: 'parentProfile', attributes: ['fullName'] }
                 ]
             },
-            {
-                model: Appointment,
-                as: 'appointment'
-            }
-        ],
+                    ],
         distinct: true,
         limit,
         offset,

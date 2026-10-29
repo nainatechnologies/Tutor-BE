@@ -1,4 +1,4 @@
-const rateLimit = require('express-rate-limit');
+const { rateLimit, ipKeyGenerator } = require('express-rate-limit');
 const AppError = require('../utils/AppError');
 
 // Best Practice: Rate-limit by phone number (req.body.phone) rather than raw IP.
@@ -19,7 +19,7 @@ const otpRateLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     keyGenerator: (req) => {
-        return req.body?.phone ? `otp_${req.body.phone}` : (req.ip || 'unknown');
+        return req.body?.phone ? `otp_${req.body.phone}` : ipKeyGenerator(req.ip);
     },
     skip: (req) => isTestOrDev(req),
     handler: (req, res, next) => {

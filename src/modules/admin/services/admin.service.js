@@ -935,27 +935,7 @@ const getRevenueAnalytics = async (query = {}) => {
 
     // 5. Dynamic Revenue by Subject
     let revenueBySubject = [];
-    try {
-        const [appSubjectRows] = await sequelize.query(`
-            SELECT s.name as subject, SUM(COALESCE(a.amount, 0)) as total
-            FROM appointments a
-            JOIN subjects s ON a.subjectId = s.id
-            WHERE a.status IN ('COMPLETED', 'CONFIRMED')
-            GROUP BY s.id, s.name
-            ORDER BY total DESC
-            LIMIT 6
-        `);
-
-        if (appSubjectRows && appSubjectRows.length > 0) {
-            const sumTotal = appSubjectRows.reduce((acc, r) => acc + parseFloat(r.total || 0), 0) || 1;
-            revenueBySubject = appSubjectRows.map(r => ({
-                subject: r.subject,
-                percentage: Math.round((parseFloat(r.total || 0) / sumTotal) * 100),
-            }));
-        }
-    } catch (e) {
-        // Fallback to subjects distribution
-    }
+    
 
     if (revenueBySubject.length === 0) {
         try {

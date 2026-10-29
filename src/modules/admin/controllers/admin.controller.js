@@ -18,7 +18,6 @@ const getRegistrationRequests = async (req, res, next) => {
     }
 };
 
-
 /**
  * Controller to update registration status (Accept or Reject).
  * PATCH /api/admin/registration-requests/:id
@@ -125,42 +124,6 @@ const getParentRegistrations = async (req, res, next) => {
 };
 
 /**
- * Controller to fetch appointments across the platform.
- * GET /api/admin/appointments
- */
-const getAppointments = async (req, res, next) => {
-    try {
-        const appointmentService = require('../../appointments/services/appointment.service');
-        const result = await appointmentService.getAdminAppointments(req.query);
-        res.status(200).json({
-            success: true,
-            data: result.appointments,
-            pagination: result.pagination,
-        });
-    } catch (error) {
-        next(error);
-    }
-};
-
-/**
- * Controller to update appointment status/details.
- * PATCH /api/admin/appointments/:id
- */
-const updateAppointment = async (req, res, next) => {
-    try {
-        const appointmentService = require('../../appointments/services/appointment.service');
-        const updated = await appointmentService.updateAppointmentByAdmin(req.params.id, req.body);
-        res.status(200).json({
-            success: true,
-            message: 'Appointment updated successfully',
-            data: updated,
-        });
-    } catch (error) {
-        next(error);
-    }
-};
-
-/**
  * Controller to get Admin & Business Profile.
  * GET /api/admin/profile
  */
@@ -217,8 +180,7 @@ module.exports = {
     getAdminLeads,
     getAdminPayments,
     getParentRegistrations,
-    getAppointments,
-    updateAppointment,
+
     getAdminProfile,
     updateAdminProfile,
     getRevenueAnalytics,

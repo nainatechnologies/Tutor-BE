@@ -61,20 +61,7 @@ const getParentRegistrationsSchema = z.object({
     search: z.string().optional(),
 });
 
-const getAdminAppointmentsSchema = z.object({
-    page: z.preprocess((val) => (val !== undefined && val !== '' ? parseInt(String(val), 10) : 1), z.number().int().min(1).default(1)),
-    limit: z.preprocess((val) => (val !== undefined && val !== '' ? parseInt(String(val), 10) : 10), z.number().int().min(1).max(100).default(10)),
-    status: z.string().optional(),
-    mode: z.string().optional(),
-    search: z.string().optional(),
-});
 
-const updateAdminAppointmentSchema = z.object({
-    status: z.string().optional(),
-    meetingLink: z.string().optional().nullable(),
-    notes: z.string().optional().nullable(),
-    scheduledDate: z.string().optional().nullable(),
-});
 
 const updateAdminProfileSchema = z.object({
     businessName: z.string().min(1, 'Business name cannot be empty').optional(),
@@ -93,8 +80,6 @@ module.exports = {
     getAdminLeadsSchema,
     getAdminPaymentsSchema,
     getParentRegistrationsSchema,
-    getAdminAppointmentsSchema,
-    updateAdminAppointmentSchema,
     updateAdminProfileSchema,
 };
 

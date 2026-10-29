@@ -43,7 +43,7 @@ const connectionRoutes = require('./modules/connections/routes/connection.routes
 const paymentRoutes = require('./modules/payments/routes/payment.routes');
 const searchRoutes = require('./modules/search/routes/search.routes');
 const walletRoutes = require('./modules/wallet/routes/wallet.routes');
-const appointmentRoutes = require('./modules/appointments/routes/appointment.routes');
+
 const reviewRoutes = require('./modules/reviews/routes/review.routes');
 const complaintRoutes = require('./modules/support/routes/complaint.routes');
 const notificationRoutes = require('./modules/notifications/routes/notification.routes');
@@ -58,7 +58,7 @@ app.use(['/api/connections', '/connections'], connectionRoutes);
 app.use(['/api/payments', '/payments'], paymentRoutes);
 app.use(['/api/search', '/search'], searchRoutes);
 app.use(['/api/wallet', '/wallet'], walletRoutes);
-app.use(['/api/appointments', '/appointments'], appointmentRoutes);
+
 app.use(['/api/reviews', '/reviews'], reviewRoutes);
 app.use(['/api/complaints', '/complaints'], complaintRoutes);
 app.use(['/api/notifications', '/notifications'], notificationRoutes);

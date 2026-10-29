@@ -11,8 +11,6 @@ const {
     getAdminLeadsSchema,
     getAdminPaymentsSchema,
     getParentRegistrationsSchema,
-    getAdminAppointmentsSchema,
-    updateAdminAppointmentSchema,
     updateAdminProfileSchema,
 } = require('../validators/admin.validator');
 
@@ -91,19 +89,6 @@ const {
     updateReviewStatusSchema,
 } = require('../../reviews/validators/review.validator');
 
-// GET /api/admin/appointments
-router.get(
-    '/appointments',
-    validate(getAdminAppointmentsSchema, 'query'),
-    adminController.getAppointments
-);
-
-// PATCH /api/admin/appointments/:id
-router.patch(
-    '/appointments/:id',
-    validate(updateAdminAppointmentSchema, 'body'),
-    adminController.updateAppointment
-);
 
 // GET /api/admin/reviews - Admin reviews moderation list
 router.get(

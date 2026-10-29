@@ -8,7 +8,6 @@ const createComplaintSchema = z.object({
     subject: z.string().min(3, 'Subject must be at least 3 characters').max(150, 'Subject cannot exceed 150 characters'),
     description: z.string().min(10, 'Detailed description must be at least 10 characters').max(2000, 'Description cannot exceed 2000 characters'),
     reportedId: z.string().uuid('Invalid user ID').optional().nullable(),
-    appointmentId: z.string().uuid('Invalid appointment ID').optional().nullable(),
     priority: z.enum(Object.values(COMPLAINT_PRIORITY)).optional().default(COMPLAINT_PRIORITY.MEDIUM),
 });
 

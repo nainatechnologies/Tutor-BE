@@ -7,7 +7,7 @@ const Category = require('../../master/models/Category');
 const Subject = require('../../master/models/Subject');
 const OtpCode = require('./OtpCode');
 const Connection = require('../../connections/models/Connection');
-const Appointment = require('../../appointments/models/Appointment');
+
 const Payment = require('../../payments/models/Payment');
 const Complaint = require('../../support/models/Complaint');
 const Review = require('../../reviews/models/Review');
@@ -118,17 +118,6 @@ Connection.belongsTo(ParentProfile, { foreignKey: 'parentId', as: 'parent' });
 TutorProfile.hasMany(Connection, { foreignKey: 'tutorId', as: 'connections' });
 Connection.belongsTo(TutorProfile, { foreignKey: 'tutorId', as: 'tutor' });
 
-// ==========================================
-// Appointment Associations
-// ==========================================
-ParentProfile.hasMany(Appointment, { foreignKey: 'parentId', as: 'appointments' });
-Appointment.belongsTo(ParentProfile, { foreignKey: 'parentId', as: 'parent' });
-TutorProfile.hasMany(Appointment, { foreignKey: 'tutorId', as: 'appointments' });
-Appointment.belongsTo(TutorProfile, { foreignKey: 'tutorId', as: 'tutor' });
-ChildProfile.hasMany(Appointment, { foreignKey: 'childId', as: 'appointments' });
-Appointment.belongsTo(ChildProfile, { foreignKey: 'childId', as: 'child' });
-Subject.hasMany(Appointment, { foreignKey: 'subjectId', as: 'appointments' });
-Appointment.belongsTo(Subject, { foreignKey: 'subjectId', as: 'subject' });
 
 // ==========================================
 // Payment Associations
@@ -143,8 +132,6 @@ User.hasMany(Complaint, { foreignKey: 'reporterId', as: 'complaintsFiled' });
 Complaint.belongsTo(User, { foreignKey: 'reporterId', as: 'reporter' });
 User.hasMany(Complaint, { foreignKey: 'reportedId', as: 'complaintsReceived' });
 Complaint.belongsTo(User, { foreignKey: 'reportedId', as: 'reportedUser' });
-Appointment.hasMany(Complaint, { foreignKey: 'appointmentId', as: 'complaints' });
-Complaint.belongsTo(Appointment, { foreignKey: 'appointmentId', as: 'appointment' });
 
 // ==========================================
 // Review Associations
@@ -164,8 +151,6 @@ Review.belongsTo(TutorProfile, { foreignKey: 'tutorId', as: 'tutor' });
 ParentProfile.hasMany(Review, { foreignKey: 'parentId', as: 'parentReviewsReceived' });
 Review.belongsTo(ParentProfile, { foreignKey: 'parentId', as: 'reviewedParent' });
 
-Appointment.hasOne(Review, { foreignKey: 'appointmentId', as: 'review' });
-Review.belongsTo(Appointment, { foreignKey: 'appointmentId', as: 'appointment' });
 
 // ==========================================
 // Wallet Associations
@@ -192,7 +177,6 @@ module.exports = {
     Subject,
     OtpCode,
     Connection,
-    Appointment,
     Payment,
     Complaint,
     Review,

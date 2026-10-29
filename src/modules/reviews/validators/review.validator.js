@@ -5,7 +5,6 @@ const createReviewSchema = z.object({
     targetType: z.enum(Object.values(REVIEW_TARGET_TYPE)),
     tutorId: z.string().uuid('Invalid tutor ID').optional().nullable(),
     parentId: z.string().uuid('Invalid parent ID').optional().nullable(),
-    appointmentId: z.string().uuid('Invalid appointment ID').optional().nullable(),
     subject: z.string().max(100, 'Subject name too long').optional().nullable(),
     rating: z.coerce.number().int().min(1, 'Minimum rating is 1').max(5, 'Maximum rating is 5'),
     comment: z.string().max(3000, 'Comment too long').optional().nullable(),
