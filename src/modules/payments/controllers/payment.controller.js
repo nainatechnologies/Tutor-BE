@@ -114,7 +114,7 @@ const handleCallback = async (req, res) => {
             error,
         } = data;
 
-        const frontendUrl = data.frontendUrl || process.env.FRONTEND_URL;
+        const frontendUrl = (data.frontendUrl || process.env.FRONTEND_URL || '').replace(/\/$/, '');
         const redirectPath = data.redirect || '/tutor/leads';
 
         if (error || !razorpay_payment_id) {
@@ -216,7 +216,7 @@ const handleCallback = async (req, res) => {
         return res.redirect(`${frontendUrl}${successRedirect}`);
     } catch (err) {
         console.error('Payment callback error:', err);
-        const frontendUrl = process.env.FRONTEND_URL;
+        const frontendUrl = (process.env.FRONTEND_URL || '').replace(/\/$/, '');
         return res.redirect(`${frontendUrl}/register?payment_status=error&message=${encodeURIComponent(err.message)}`);
     }
 };

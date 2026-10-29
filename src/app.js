@@ -9,18 +9,33 @@ const errorHandler = require('./shared/middlewares/error.middleware');
 const app = express();
 
 // Middlewares
+const isDev = process.env.NODE_ENV !== 'production';
+
+// Allowed client origins derived dynamically from environment variables
+const allowedOrigins = [
+    process.env.FRONTEND_URL,
+    process.env.ADMIN_URL,
+].filter(Boolean).map(url => url.replace(/\/$/, ''));
+
 app.use(cors({
     origin: (origin, callback) => {
+        // 1. Allow non-browser requests (Postman, mobile apps, server-to-server)
         if (!origin) return callback(null, true);
-        if (
-            origin.startsWith('http://localhost:') ||
-            origin.startsWith('http://127.0.0.1:') ||
-            origin === process.env.FRONTEND_URL ||
-            origin === process.env.ADMIN_URL
-        ) {
+
+        const cleanOrigin = origin.replace(/\/$/, '');
+
+        // 2. Allow localhost and 127.0.0.1 in development mode only
+        if (isDev && (cleanOrigin.startsWith('http://localhost:') || cleanOrigin.startsWith('http://127.0.0.1:'))) {
             return callback(null, true);
         }
-        callback(null, true);
+
+        // 3. Strict whitelist check against .env client domains
+        if (allowedOrigins.includes(cleanOrigin)) {
+            return callback(null, true);
+        }
+
+        // 4. Reject all unauthorized origins
+        return callback(null, false);
     },
     credentials: true,
 }));
