@@ -7,6 +7,7 @@ const { searchTutorsQuerySchema, tutorIdParamSchema } = require('../validators/s
 // Public or Protected depending on requirements.
 // Usually search is public or at least accessible to any logged-in parent.
 router.get('/tutors', validate(searchTutorsQuerySchema, 'query'), searchController.searchTutors);
+router.get('/autocomplete', searchController.autocomplete);
 router.get('/tutors/:id', validate(tutorIdParamSchema, 'params'), searchController.getTutorById);
 
 module.exports = router;

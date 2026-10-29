@@ -1,17 +1,47 @@
 const { Op } = require('sequelize');
-const { TutorProfile, User, Subject } = require('../../users/models');
+const { TutorProfile, User, Subject, Category } = require('../../users/models');
+
+const sequelize = require('../../../config/database');
 
 exports.searchTutors = async (filters) => {
-    const { city, pincode, subjectId, tutorType, professionalType, maxFee, page = 1, limit = 10 } = filters;
+    const { q, city, pincode, subjectId, tutorType, professionalType, maxFee, page = 1, limit = 10 } = filters;
 
     const whereClause = {
         approvalStatus: 'approved',
         verified: true,
     };
 
-    if (city) {
+    const generalQuery = (q || '').trim();
+    if (generalQuery) {
+        const searchTerm = `%${generalQuery}%`;
+
+        // Search in Subject names to find matching tutors
+        const matchedSubjects = await Subject.findAll({
+            where: { name: { [Op.like]: searchTerm } },
+            attributes: ['id']
+        });
+        const matchedSubjectIds = matchedSubjects.map(s => s.id);
+
+        let tutorIdsFromSubjects = [];
+        if (matchedSubjectIds.length > 0) {
+            const [tutorWithSubjects] = await sequelize.query(
+                'SELECT tutorProfileId FROM tutor_subjects WHERE subjectId IN (?)',
+                { replacements: [matchedSubjectIds] }
+            );
+            tutorIdsFromSubjects = tutorWithSubjects.map(r => r.tutorProfileId);
+        }
+
+        whereClause[Op.or] = [
+            { fullName: { [Op.like]: searchTerm } },
+            { city: { [Op.like]: searchTerm } },
+            { location: { [Op.like]: searchTerm } },
+            { pincode: { [Op.like]: searchTerm } },
+            ...(tutorIdsFromSubjects.length ? [{ id: { [Op.in]: tutorIdsFromSubjects } }] : [])
+        ];
+    } else if (city) {
         whereClause[Op.or] = [
             { city: { [Op.like]: `%${city}%` } },
+            { location: { [Op.like]: `%${city}%` } },
             { pincode: { [Op.like]: `%${city}%` } }
         ];
     }
@@ -90,4 +120,104 @@ exports.getTutorById = async (id) => {
     }
 
     return tutor;
+};
+
+
+exports.getAutocompleteSuggestions = async (q) => {
+    const queryStr = (q || '').trim();
+    if (!queryStr) {
+        return { subjects: [], tutors: [], locations: [] };
+    }
+
+    const searchTerm = `%${queryStr}%`;
+    const escapedTerm = queryStr.replace(/'/g, "''");
+
+    // 1. Fetch matching subjects (limit 5)
+    const subjects = await Subject.findAll({
+        where: {
+            name: { [Op.like]: searchTerm },
+            isActive: true,
+        },
+        include: [{
+            model: Category,
+            as: 'category',
+            attributes: ['name', 'type'],
+            required: false,
+        }],
+        attributes: ['id', 'name'],
+        order: [
+            sequelize.literal(`CASE WHEN Subject.name LIKE '${escapedTerm}%' THEN 0 ELSE 1 END`),
+            ['name', 'ASC'],
+        ],
+        limit: 5,
+    });
+
+    // 2. Fetch matching approved & active tutors (limit 5)
+    const tutors = await TutorProfile.findAll({
+        where: {
+            fullName: { [Op.like]: searchTerm },
+            approvalStatus: 'approved',
+            verified: true,
+        },
+        include: [
+            {
+                model: User,
+                as: 'user',
+                attributes: ['id', 'status'],
+                where: { status: 'ACTIVE' },
+                required: true,
+            },
+            {
+                model: Subject,
+                as: 'subjects',
+                attributes: ['id', 'name'],
+                through: { attributes: [] },
+                required: false,
+            }
+        ],
+        attributes: ['id', 'fullName', 'city', 'pincode', 'professionalType', 'tutorType', 'avatarUrl', 'rating'],
+        order: [
+            sequelize.literal(`CASE WHEN TutorProfile.fullName LIKE '${escapedTerm}%' THEN 0 ELSE 1 END`),
+            ['rating', 'DESC'],
+        ],
+        limit: 5,
+    });
+
+    // 3. Fetch matching locations (city or pincode) from approved active tutors (limit 4)
+    const [locations] = await sequelize.query(`
+        SELECT DISTINCT city, pincode 
+        FROM tutor_profiles 
+        WHERE (city LIKE :searchTerm OR pincode LIKE :searchTerm)
+          AND approvalStatus = 'approved' 
+          AND verified = 1
+          AND city IS NOT NULL 
+          AND city != ''
+        LIMIT 4
+    `, {
+        replacements: { searchTerm }
+    });
+
+    return {
+        subjects: subjects.map(s => ({
+            id: s.id,
+            name: s.name,
+            category: s.category?.name || 'Subject',
+            type: s.category?.type || 'academic',
+        })),
+        tutors: tutors.map(t => ({
+            id: t.id,
+            name: t.fullName,
+            city: t.city,
+            pincode: t.pincode,
+            professionalType: t.professionalType,
+            tutorType: t.tutorType,
+            avatarUrl: t.avatarUrl,
+            rating: t.rating,
+            subjects: (t.subjects || []).map(s => s.name),
+        })),
+        locations: locations.map(l => ({
+            city: l.city,
+            pincode: l.pincode,
+        })),
+    };
 };

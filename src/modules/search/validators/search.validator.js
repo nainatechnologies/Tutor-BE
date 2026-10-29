@@ -1,6 +1,8 @@
 const { z } = require('zod');
 
 const searchTutorsQuerySchema = z.object({
+    q: z.string().trim().optional(),
+    query: z.string().trim().optional(),
     city: z.string().trim().optional(),
     pincode: z.string().trim().regex(/^\d{6}$/, "Pincode must be 6 digits").optional().or(z.literal('')),
     subjectId: z.string().uuid("Invalid subject ID").optional().or(z.literal('')),
