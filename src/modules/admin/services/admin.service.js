@@ -855,6 +855,12 @@ const updateAdminProfile = async (adminUserId, payload) => {
     // Sync phone number to the corresponding User record for authentication & OTPs
     if (payload.phone) {
         const cleanedPhone = payload.phone.replace(/\D/g, '').slice(-10);
+        if (!cleanedPhone || !/^[6-9]\d{9}$/.test(cleanedPhone)) {
+            throw new AppError('Phone number must be a valid 10-digit mobile number starting with 6, 7, 8, or 9.', 400);
+        }
+        if (profile) {
+            await profile.update({ phone: '+91 ' + cleanedPhone });
+        }
         if (cleanedPhone && cleanedPhone.length === 10) {
             const targetUserId = adminUserId || profile?.userId;
             let adminUser = null;

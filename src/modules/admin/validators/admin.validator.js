@@ -70,7 +70,7 @@ const updateAdminProfileSchema = z.object({
     businessDescription: z.string().min(1, 'Business description cannot be empty').optional(),
     name: z.string().min(1, 'Admin name cannot be empty').optional(),
     email: z.string().email('Invalid email address').optional(),
-    phone: z.string().min(7, 'Valid phone number is required').optional(),
+    phone: z.string().regex(/^[6-9]\d{9}$/, 'Phone number must be exactly 10 digits starting with 6, 7, 8, or 9 without characters or spaces').optional(),
 });
 
 module.exports = {
