@@ -7,6 +7,7 @@ exports.searchTutors = async (req, res, next) => {
             city: req.query.city,
             pincode: req.query.pincode,
             subjectId: req.query.subjectId,
+            childId: req.query.childId,
             tutorType: req.query.tutorType,
             professionalType: req.query.professionalType,
             maxFee: req.query.maxFee ? parseFloat(req.query.maxFee) : undefined,

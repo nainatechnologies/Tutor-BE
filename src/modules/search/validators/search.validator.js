@@ -6,6 +6,7 @@ const searchTutorsQuerySchema = z.object({
     city: z.string().trim().optional(),
     pincode: z.string().trim().regex(/^\d{6}$/, "Pincode must be 6 digits").optional().or(z.literal('')),
     subjectId: z.string().uuid("Invalid subject ID").optional().or(z.literal('')),
+    childId: z.string().uuid("Invalid child ID").optional().or(z.literal('all')).or(z.literal('')),
     tutorType: z.string().trim().optional(),
     professionalType: z.string().trim().optional(),
     maxFee: z.coerce.number().positive("Max fee must be a positive number").optional(),

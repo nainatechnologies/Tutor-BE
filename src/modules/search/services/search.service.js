@@ -1,10 +1,10 @@
 const { Op } = require('sequelize');
-const { TutorProfile, User, Subject, Category } = require('../../users/models');
+const { TutorProfile, User, Subject, Category, ChildProfile } = require('../../users/models');
 
 const sequelize = require('../../../config/database');
 
 exports.searchTutors = async (filters) => {
-    const { q, city, pincode, subjectId, tutorType, professionalType, maxFee, page = 1, limit = 10 } = filters;
+    const { q, city, pincode, subjectId, childId, tutorType, professionalType, maxFee, page = 1, limit = 10 } = filters;
 
     const whereClause = {
         approvalStatus: 'approved',
@@ -58,6 +58,47 @@ exports.searchTutors = async (filters) => {
         whereClause.perSessionFee = { [Op.lte]: maxFee };
     }
 
+    
+    let matchedChildInfo = null;
+    if (childId && childId !== 'all') {
+        const child = await ChildProfile.findByPk(childId, {
+            include: [{
+                model: Subject,
+                as: 'subjects',
+                attributes: ['id', 'name'],
+                through: { attributes: [] }
+            }]
+        });
+
+        if (child) {
+            matchedChildInfo = {
+                id: child.id,
+                name: child.name,
+                grade: child.grade,
+                preferredMode: child.preferredMode,
+                subjects: (child.subjects || []).map(s => s.name)
+            };
+
+            if (child.subjects && child.subjects.length > 0) {
+                const childSubjectIds = child.subjects.map(s => s.id);
+                const [tutorWithSubjects] = await sequelize.query(
+                    'SELECT DISTINCT tutorProfileId FROM tutor_subjects WHERE subjectId IN (?)',
+                    { replacements: [childSubjectIds] }
+                );
+                const childTutorIds = tutorWithSubjects.map(r => r.tutorProfileId);
+                if (childTutorIds.length > 0) {
+                    if (whereClause.id && whereClause.id[Op.in]) {
+                        whereClause.id = { [Op.in]: childTutorIds.filter(id => whereClause.id[Op.in].includes(id)) };
+                    } else {
+                        whereClause.id = { [Op.in]: childTutorIds };
+                    }
+                } else {
+                    whereClause.id = { [Op.in]: [] };
+                }
+            }
+        }
+    }
+
     const includeSubjects = {
         model: Subject,
         as: 'subjects',
@@ -94,6 +135,7 @@ exports.searchTutors = async (filters) => {
         total,
         page: Number(page),
         totalPages: Math.ceil(total / limit),
+        matchedChild: matchedChildInfo,
     };
 };
 
