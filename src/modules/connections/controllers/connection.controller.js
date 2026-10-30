@@ -4,7 +4,7 @@ const { ParentProfile, TutorProfile } = require('../../users/models');
 
 const manageConnection = async (req, res) => {
     try {
-        const { connectionId, tutorId, message, status } = req.body;
+        const { connectionId, tutorId, message, status, rejectionReason } = req.body;
 
         if (!connectionId) {
             // New connection request
@@ -18,7 +18,7 @@ const manageConnection = async (req, res) => {
             const tutor = await TutorProfile.findOne({ where: { userId: req.user.id } });
             if (!tutor) return res.status(403).json({ success: false, message: 'Only tutors can respond to connection requests' });
             
-            const connection = await connectionService.respondToConnection(connectionId, tutor.id, status);
+            const connection = await connectionService.respondToConnection(connectionId, tutor.id, status, rejectionReason);
             return res.status(200).json({ success: true, data: connection });
         }
     } catch (error) {
@@ -48,8 +48,6 @@ const getMyConnections = async (req, res) => {
         return res.status(500).json({ success: false, message: 'Failed to fetch connections' });
     }
 };
-
-
 
 module.exports = {
     manageConnection,

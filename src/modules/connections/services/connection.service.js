@@ -44,6 +44,8 @@ const requestConnection = async (parentId, tutorId, message) => {
 
         connection.status = Connection.STATUS.PENDING;
         connection.message = message;
+        connection.rejectionReason = null;
+        connection.reminderSentAt = null;
         await connection.save();
     } else {
         // Atomically deduct 50 coins from parent's wallet
@@ -58,7 +60,9 @@ const requestConnection = async (parentId, tutorId, message) => {
             parentId,
             tutorId: tutor.id,
             message,
-            status: Connection.STATUS.PENDING
+            status: Connection.STATUS.PENDING,
+            rejectionReason: null,
+            reminderSentAt: null,
         });
     }
 
@@ -78,7 +82,6 @@ const requestConnection = async (parentId, tutorId, message) => {
 
     return connection;
 };
-
 
 const getParentConnections = async (parentId) => {
     const connections = await Connection.findAll({
@@ -141,7 +144,7 @@ const getTutorConnections = async (tutorProfileOrUserId) => {
     });
 };
 
-const respondToConnection = async (connectionId, tutorId, status) => {
+const respondToConnection = async (connectionId, tutorId, status, rejectionReason) => {
     const connection = await Connection.findOne({
         where: { id: connectionId, tutorId }
     });
@@ -170,6 +173,9 @@ const respondToConnection = async (connectionId, tutorId, status) => {
     }
 
     connection.status = status;
+    if (status === Connection.STATUS.REJECTED) {
+        connection.rejectionReason = rejectionReason || 'Declined by tutor';
+    }
     await connection.save();
 
     // If tutor rejects, automatically refund 50 coins back to parent
@@ -178,7 +184,7 @@ const respondToConnection = async (connectionId, tutorId, status) => {
         await walletService.refundCoins(parent.userId, {
             amount: COIN_COSTS.PARENT_CONNECTION_COST,
             referenceId: connection.id,
-            description: 'Refund: Connection request rejected by tutor',
+            description: `Refund: Connection request declined by tutor (${connection.rejectionReason || 'Declined'})`,
         });
     }
 
@@ -203,7 +209,7 @@ const respondToConnection = async (connectionId, tutorId, status) => {
                 message: isAccepted
                     ? 'The tutor accepted your connection request.'
                     : 'The tutor declined your connection request. Your coins have been refunded.',
-                data: { connectionId: connection.id, status },
+                data: { connectionId: connection.id, status, rejectionReason: connection.rejectionReason },
             });
         }
     } catch (e) {

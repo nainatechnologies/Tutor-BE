@@ -10,6 +10,7 @@ const updateConnectionSchema = z.object({
     status: z.enum(['ACCEPTED', 'REJECTED'], {
         errorMap: () => ({ message: "Status must be either ACCEPTED or REJECTED" }),
     }),
+    rejectionReason: z.string().max(255).optional(),
 });
 
 const manageConnectionSchema = z.union([

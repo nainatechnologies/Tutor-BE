@@ -157,6 +157,18 @@ const ensureSchemaUpdates = async (sequelize) => {
             `);
         }
 
+        // Ensure connections table supports rejectionReason and reminderSentAt
+        const hasConnections = tables.some(t => (typeof t === 'string' ? t : t.tableName || '').toLowerCase() === 'connections');
+        if (hasConnections) {
+            const connTable = await queryInterface.describeTable('connections');
+            if (!connTable.rejectionReason) {
+                await sequelize.query("ALTER TABLE `connections` ADD COLUMN `rejectionReason` VARCHAR(255) NULL;");
+            }
+            if (!connTable.reminderSentAt) {
+                await sequelize.query("ALTER TABLE `connections` ADD COLUMN `reminderSentAt` DATETIME NULL;");
+            }
+        }
+
         // Expand rciNumber to VARCHAR(20) to support full RCI formats (e.g. CRR123456) without truncation
         try {
             await sequelize.query("ALTER TABLE `tutor_profiles` MODIFY COLUMN `rciNumber` VARCHAR(20) NULL;");

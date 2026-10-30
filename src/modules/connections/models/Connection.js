@@ -28,6 +28,14 @@ const Connection = sequelize.define('Connection', {
     message: {
         type: DataTypes.TEXT,
         allowNull: true,
+    },
+    rejectionReason: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+    },
+    reminderSentAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
     }
 }, {
     tableName: 'connections',
