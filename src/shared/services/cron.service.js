@@ -1,6 +1,10 @@
 const cron = require('node-cron');
 const backupService = require('../../modules/admin/services/backup.service');
-const { expireStaleConnections, sendPendingConnectionReminders } = require('../../modules/connections/services/connectionExpiry.service');
+const {
+    expireStaleConnections,
+    sendPendingConnectionReminders,
+    sendPostSessionReviewPrompts,
+} = require('../../modules/connections/services/connectionExpiry.service');
 
 /**
  * Initializes all recurring background cron jobs.
@@ -28,13 +32,14 @@ const initScheduledJobs = () => {
     });
     console.log('[Cron] Automated daily database backup scheduled (Runs daily at 02:00 AM with 7-day retention).');
 
-    // 2. Connection Expiry & 50 Coins Auto-Refund:
-    // Run once 5s after startup to catch any requests that crossed 7 days while server was down
+    // 2. Connection Expiry, Reminders & Review Prompts:
+    // Run once 5s after startup to catch any requests that crossed thresholds while server was down
     setTimeout(async () => {
         try {
-            console.log('[Cron] Running startup check for 7-day expired connection requests & reminders...');
+            console.log('[Cron] Running startup check for 7-day expired connection requests, reminders & review prompts...');
             await expireStaleConnections();
             await sendPendingConnectionReminders();
+            await sendPostSessionReviewPrompts();
         } catch (bootErr) {
             console.warn('[Cron] Initial connection expiry check note:', bootErr.message);
         }
@@ -42,15 +47,16 @@ const initScheduledJobs = () => {
 
     // Run every hour at minute 0 ('0 * * * *')
     cron.schedule('0 * * * *', async () => {
-        console.log('[Cron] Running hourly check for 7-day expired connection requests & reminders...');
+        console.log('[Cron] Running hourly check for 7-day expired requests, reminders & review prompts...');
         try {
             await expireStaleConnections();
             await sendPendingConnectionReminders();
+            await sendPostSessionReviewPrompts();
         } catch (cronErr) {
             console.error('[Cron] Error during connection expiry job:', cronErr.message);
         }
     });
-    console.log('[Cron] Automated 7-Day Connection Expiry & Coin Refund scheduled (Runs every hour).');
+    console.log('[Cron] Automated 7-Day Connection Expiry, Reminders & Review Prompts scheduled (Runs every hour).');
 };
 
 module.exports = {

@@ -36,6 +36,10 @@ const Connection = sequelize.define('Connection', {
     reminderSentAt: {
         type: DataTypes.DATE,
         allowNull: true,
+    },
+    reviewPromptSentAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
     }
 }, {
     tableName: 'connections',

@@ -376,6 +376,30 @@ const deductCoins = async (userId, payload) => {
 
         await t.commit();
 
+        // Check low coin balance and dispatch friendly warning
+        try {
+            const isLeadUnlock = type === TRANSACTION_TYPE.SPEND_LEAD_UNLOCK;
+            const threshold = isLeadUnlock ? COIN_COSTS.TUTOR_LEAD_COST : COIN_COSTS.PARENT_CONNECTION_COST;
+            if (newBalance < threshold) {
+                createNotification({
+                    userId,
+                    targetRole: isLeadUnlock ? NOTIFICATION_TARGET_ROLES.TUTOR : NOTIFICATION_TARGET_ROLES.PARENT,
+                    type: NOTIFICATION_TYPES.PAYMENT,
+                    title: 'Low Coin Balance',
+                    message: isLeadUnlock
+                        ? `Your coin balance is low (${newBalance} coins). Top up your wallet so you never miss student leads!`
+                        : `Your wallet balance is low (${newBalance} coins). Recharge your wallet to keep connecting with top tutors.`,
+                    data: {
+                        balance: newBalance,
+                        actionLabel: isLeadUnlock ? 'Top Up Coins' : 'Recharge Coins',
+                        actionRoute: isLeadUnlock ? '/tutor/wallet' : '/wallet',
+                    },
+                }).catch(() => {});
+            }
+        } catch (warnErr) {
+            // Silently continue
+        }
+
         return {
             success: true,
             balance: newBalance,

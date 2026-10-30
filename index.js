@@ -167,6 +167,9 @@ const ensureSchemaUpdates = async (sequelize) => {
             if (!connTable.reminderSentAt) {
                 await sequelize.query("ALTER TABLE `connections` ADD COLUMN `reminderSentAt` DATETIME NULL;");
             }
+            if (!connTable.reviewPromptSentAt) {
+                await sequelize.query("ALTER TABLE `connections` ADD COLUMN `reviewPromptSentAt` DATETIME NULL;");
+            }
         }
 
         // Expand rciNumber to VARCHAR(20) to support full RCI formats (e.g. CRR123456) without truncation
