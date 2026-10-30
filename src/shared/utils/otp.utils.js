@@ -54,14 +54,21 @@ const sendSms = async (phone, otp, action) => {
             
             const response = await axios.get(url);
             console.log(`[SMS] SpearUC Response:`, response.data);
+
+            if (response.data && response.data.status === 'error') {
+                console.error('[SMS] SpearUC returned error:', response.data);
+                const AppError = require('./AppError');
+                throw new AppError(`SMS Gateway: ${response.data.Message || 'Failed to deliver SMS'}`, 502);
+            }
+
             return response.data;
         } else {
             console.log(`[SMS] Live SMS Gateway not configured, skipping actual network request.`);
             return { success: true, message: "Mock SMS sent" };
         }
     } catch (error) {
+        if (error.statusCode) throw error;
         console.error(`[SMS] Error sending SMS via SpearUC:`, error.message);
-        // We throw an AppError so the controller knows the SMS failed
         const AppError = require('./AppError');
         throw new AppError('Failed to send SMS OTP. Please try again.', 500);
     }
