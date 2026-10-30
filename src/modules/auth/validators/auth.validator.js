@@ -69,7 +69,19 @@ const changePasswordSchema = z.object({
     path: ["newPassword"]
 });
 
+
+const verifyAdmin2FASchema = z.object({
+    tempToken: z.string().min(10, 'Verification session token is required'),
+    otp: z.string().length(6, 'Verification code must be exactly 6 digits')
+});
+
+const resendAdmin2FASchema = z.object({
+    tempToken: z.string().min(10, 'Verification session token is required')
+});
+
 module.exports = {
+    verifyAdmin2FASchema,
+    resendAdmin2FASchema,
     registerSchema,
     loginSchema,
     sendOtpSchema,

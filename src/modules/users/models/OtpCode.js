@@ -17,7 +17,7 @@ const OtpCode = sequelize.define('OtpCode', {
         allowNull: false,
     },
     action: {
-        type: DataTypes.ENUM('REGISTER', 'RESET_PASSWORD'),
+        type: DataTypes.ENUM('REGISTER', 'RESET_PASSWORD', 'ADMIN_2FA'),
         allowNull: false,
         defaultValue: 'REGISTER',
     },

@@ -171,6 +171,27 @@ const loginUser = async (identifier, password) => {
         }
     } else if (user.role === 'admin' || user.role === 'ADMIN') {
         isProfileComplete = true;
+
+        // Two-Step Verification for Administrator accounts
+        if (user.phone) {
+            const tempToken = jwt.sign(
+                { id: user.id, role: user.role, type: '2FA_PENDING' },
+                process.env.JWT_SECRET,
+                { expiresIn: '5m' }
+            );
+
+            await sendOtp(user.phone, 'ADMIN_2FA');
+
+            const cleanPhone = user.phone.replace(/\D/g, '').slice(-10);
+            const maskedPhone = `+91 ${cleanPhone.slice(0, 3)}****${cleanPhone.slice(-3)}`;
+
+            return {
+                requires2FA: true,
+                tempToken,
+                maskedPhone,
+                email: user.email,
+            };
+        }
     }
 
     const token = generateToken(user.id);
@@ -268,11 +289,12 @@ const sendOtp = async (phoneOrNull, action, email = null) => {
 };
 
 const verifyOtp = async (phone, providedOtp, action, deleteRecord = true) => {
-    // 0. Development / test bypass for mock numbers
-    const isTestNumber = phone.startsWith('9000000') || phone.startsWith('999999') || phone === '9000000109' || phone === '9052237153' || phone === '7997736688';
-    const isDev = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
-    if ((isTestNumber || isDev) && providedOtp === '123456') {
-        return true;
+    // 0. Strict verification: Admin 2FA NEVER allows bypass; must verify the exact real OTP from DB/SMS
+    if (action !== 'ADMIN_2FA') {
+        const isMockPhone = phone.startsWith('9000000') || phone.startsWith('999999');
+        if (isMockPhone && providedOtp === '123456') {
+            return true;
+        }
     }
 
     // 1. Get the most recent OTP for this number & action
@@ -343,7 +365,77 @@ const logoutUser = async (user) => {
     };
 };
 
+
+const verifyAdmin2FA = async (tempToken, otp) => {
+    if (!tempToken) {
+        throw new AppError('Verification session token is required.', 400);
+    }
+    if (!otp) {
+        throw new AppError('Verification code is required.', 400);
+    }
+
+    let decoded;
+    try {
+        decoded = jwt.verify(tempToken, process.env.JWT_SECRET);
+    } catch (err) {
+        throw new AppError('Verification session expired or invalid. Please log in again.', 401);
+    }
+
+    if (decoded.type !== '2FA_PENDING') {
+        throw new AppError('Invalid verification token type.', 401);
+    }
+
+    const user = await User.findByPk(decoded.id);
+    if (!user || (user.role?.toLowerCase() !== 'admin')) {
+        throw new AppError('Administrator account not found.', 404);
+    }
+
+    if (user.status !== 'active') {
+        throw new AppError(`Admin account is currently ${user.status.toLowerCase()}.`, 403);
+    }
+
+    // Verify OTP against database
+    await verifyOtp(user.phone, otp, 'ADMIN_2FA', true);
+
+    // Issue permanent production Admin JWT
+    const token = generateToken(user.id);
+    const userData = user.toJSON();
+    userData.isProfileComplete = true;
+
+    return { user: userData, token };
+};
+
+const resendAdmin2FA = async (tempToken) => {
+    if (!tempToken) {
+        throw new AppError('Verification session token is required.', 400);
+    }
+
+    let decoded;
+    try {
+        decoded = jwt.verify(tempToken, process.env.JWT_SECRET);
+    } catch (err) {
+        throw new AppError('Verification session expired or invalid. Please log in again.', 401);
+    }
+
+    if (decoded.type !== '2FA_PENDING') {
+        throw new AppError('Invalid verification token.', 401);
+    }
+
+    const user = await User.findByPk(decoded.id);
+    if (!user || (user.role?.toLowerCase() !== 'admin')) {
+        throw new AppError('Administrator account not found.', 404);
+    }
+
+    await sendOtp(user.phone, 'ADMIN_2FA');
+    const cleanPhone = (user.phone || '').replace(/\D/g, '').slice(-10);
+    const maskedPhone = cleanPhone ? `+91 ${cleanPhone.slice(0, 3)}****${cleanPhone.slice(-3)}` : '';
+
+    return { success: true, maskedPhone };
+};
+
 module.exports = {
+    verifyAdmin2FA,
+    resendAdmin2FA,
     registerUser,
     loginUser,
     sendOtp,

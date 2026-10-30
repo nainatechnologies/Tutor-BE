@@ -14,9 +14,38 @@ const login = async (req, res, next) => {
     try {
         const { identifier, password } = req.body;
         
-        const { user, token } = await authService.loginUser(identifier, password);
+        const result = await authService.loginUser(identifier, password);
+
+        if (result.requires2FA) {
+            return sendSuccess(res, {
+                requires2FA: true,
+                tempToken: result.tempToken,
+                maskedPhone: result.maskedPhone,
+                email: result.email,
+            }, 'Two-step verification required. Please enter the OTP sent to your registered phone.', 200);
+        }
         
-        return sendSuccess(res, { user, token }, 'Logged in successfully', 200);
+        return sendSuccess(res, { user: result.user, token: result.token }, 'Logged in successfully', 200);
+    } catch (error) {
+        next(error);
+    }
+};
+
+const verifyAdmin2FA = async (req, res, next) => {
+    try {
+        const { tempToken, otp } = req.body;
+        const { user, token } = await authService.verifyAdmin2FA(tempToken, otp);
+        return sendSuccess(res, { user, token }, 'Two-step verification successful. Welcome to Admin Panel.', 200);
+    } catch (error) {
+        next(error);
+    }
+};
+
+const resendAdmin2FA = async (req, res, next) => {
+    try {
+        const { tempToken } = req.body;
+        const result = await authService.resendAdmin2FA(tempToken);
+        return sendSuccess(res, result, 'New verification code sent to your phone.', 200);
     } catch (error) {
         next(error);
     }
@@ -73,5 +102,7 @@ module.exports = {
     resetPassword,
     changePassword,
     logout,
+    verifyAdmin2FA,
+    resendAdmin2FA,
 };
 

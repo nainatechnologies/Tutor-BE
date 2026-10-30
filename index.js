@@ -17,6 +17,15 @@ const ensureSchemaUpdates = async (sequelize) => {
     try {
         const queryInterface = sequelize.getQueryInterface();
         const tables = await queryInterface.showAllTables();
+
+        const hasOtpCodes = tables.some(t => (typeof t === 'string' ? t : t.tableName || '').toLowerCase() === 'otp_codes');
+        if (hasOtpCodes) {
+            try {
+                await sequelize.query("ALTER TABLE `otp_codes` MODIFY COLUMN `action` ENUM('REGISTER', 'RESET_PASSWORD', 'ADMIN_2FA') NOT NULL DEFAULT 'REGISTER';");
+            } catch (enumErr) {
+                console.warn('otp_codes action ENUM migration note:', enumErr.message);
+            }
+        }
         const hasReviews = tables.some(t => (typeof t === 'string' ? t : t.tableName || '').toLowerCase() === 'reviews');
         if (hasReviews) {
             const table = await queryInterface.describeTable('reviews');
