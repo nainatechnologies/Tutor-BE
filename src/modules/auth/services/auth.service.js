@@ -7,6 +7,7 @@ const AppError = require('../../../shared/utils/AppError');
 const otpUtils = require('../../../shared/utils/otp.utils');
 const { createNotification } = require('../../notifications/services/notification.service');
 const { NOTIFICATION_TYPES, NOTIFICATION_TARGET_ROLES } = require('../../../shared/constants/notificationConstants');
+const { validateTutorSubjects } = require('../../../shared/utils/subjectValidator');
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -15,7 +16,7 @@ const generateToken = (id) => {
 };
 
 const registerUser = async (data) => {
-    const { role, email, phone, password, name, city, pincode, street, district, aadharNumber, subjectIds, childName, childGrade, goal, mode, availableTime, otp } = data;
+    const { role, email, phone, password, name, gender, city, pincode, street, district, aadharNumber, subjectIds, childName, childGrade, goal, mode, availableTime, otp, professionalType } = data;
 
     if (!otp) {
         throw new AppError('OTP is required for registration.', 400);
@@ -60,14 +61,19 @@ const registerUser = async (data) => {
                 district,
             }, { transaction });
 
-            if (childName && childGrade) {
+            if (childName) {
                 const child = await ChildProfile.create({
                     parentId: parent.id,
                     name: childName,
-                    grade: childGrade,
+                    grade: childGrade || null,
+                    gender: data.childGender || null,
+                    dateOfBirth: data.childDob || null,
+                    preferredTutorGender: data.preferredTutorGender || 'Any',
+                    medicalInformation: data.medicalInformation || data.condition || null,
                     learningGoals: goal,
                     preferredMode: mode || 'online',
                     preferredSchedule: availableTime,
+                    status: 'active',
                 }, { transaction });
 
                 if (subjectIds && subjectIds.length > 0) {
@@ -75,12 +81,21 @@ const registerUser = async (data) => {
                 }
             }
         } else if (role === 'TUTOR') {
+            const tutorProfessionalType = professionalType || 'Teacher';
+            let validatedSubjects = null;
+            if (subjectIds && subjectIds.length > 0) {
+                validatedSubjects = await validateTutorSubjects(tutorProfessionalType, subjectIds, { transaction });
+            }
+
             const tutor = await TutorProfile.create({
                 userId: user.id,
                 fullName: name,
+                gender: gender ? (gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase()) : null,
                 city,
                 pincode,
                 aadharNumber,
+                professionalType: tutorProfessionalType,
+                areasOfPractice: validatedSubjects ? validatedSubjects.map(s => s.name) : [],
             }, { transaction });
 
             // Automatically wire up the junction table if subject IDs were provided!
@@ -289,15 +304,7 @@ const sendOtp = async (phoneOrNull, action, email = null) => {
 };
 
 const verifyOtp = async (phone, providedOtp, action, deleteRecord = true) => {
-    // 0. Strict verification: Admin 2FA NEVER allows bypass; must verify the exact real OTP from DB/SMS
-    if (action !== 'ADMIN_2FA') {
-        const isMockPhone = phone.startsWith('9000000') || phone.startsWith('999999');
-        if (isMockPhone && providedOtp === '123456') {
-            return true;
-        }
-    }
-
-    // 1. Get the most recent OTP for this number & action
+    // 1. Get the most recent OTP for this number & action (Strict verification: NO BYPASS)
     const latestOtpRecord = await OtpCode.findOne({
         where: { phoneNumber: phone, action },
         order: [['createdAt', 'DESC']]
@@ -328,17 +335,75 @@ const verifyOtp = async (phone, providedOtp, action, deleteRecord = true) => {
     return true;
 };
 
-const resetPassword = async (phone, newPassword, otp) => {
-    // 1. Verify OTP specifically for RESET_PASSWORD action
-    await verifyOtp(phone, otp, 'RESET_PASSWORD');
+const verifyResetOtp = async (phone, otp) => {
+    // 1. Verify and invalidate OTP specifically for RESET_PASSWORD action
+    await verifyOtp(phone, otp, 'RESET_PASSWORD', true);
+
+    // 2. Verify account exists
+    const user = await User.findOne({ where: { phone } });
+    if (!user) {
+        throw new AppError('No account found associated with this phone number.', 404);
+    }
+
+    // 3. Issue a 15-minute cryptographically signed reset token
+    const resetToken = jwt.sign(
+        {
+            phone,
+            userId: user.id,
+            purpose: 'RESET_PASSWORD'
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: '15m' }
+    );
+
+    return { resetToken };
+};
+
+const resetPassword = async (phoneOrPayload, newPassword, otp) => {
+    let targetPhone = phoneOrPayload;
+    let targetPassword = newPassword;
+
+    if (typeof phoneOrPayload === 'object' && phoneOrPayload !== null) {
+        const payload = phoneOrPayload;
+        targetPassword = payload.newPassword;
+
+        if (payload.resetToken) {
+            let decoded;
+            try {
+                decoded = jwt.verify(payload.resetToken, process.env.JWT_SECRET);
+            } catch (err) {
+                if (err.name === 'TokenExpiredError') {
+                    throw new AppError('Password reset session has expired. Please request a new OTP.', 401);
+                }
+                throw new AppError('Invalid or corrupted password reset token.', 401);
+            }
+
+            if (decoded.purpose !== 'RESET_PASSWORD' || !decoded.phone) {
+                throw new AppError('Invalid password reset token.', 401);
+            }
+
+            targetPhone = decoded.phone;
+        } else if (payload.phone && payload.otp) {
+            // Backward-compatible direct verify
+            await verifyOtp(payload.phone, payload.otp, 'RESET_PASSWORD');
+            targetPhone = payload.phone;
+        } else {
+            throw new AppError('Reset token or phone and OTP are required.', 400);
+        }
+    } else if (otp) {
+        // Legacy positional args: resetPassword(phone, newPassword, otp)
+        await verifyOtp(phoneOrPayload, otp, 'RESET_PASSWORD');
+        targetPhone = phoneOrPayload;
+        targetPassword = newPassword;
+    }
 
     // 2. Get User
-    const user = await User.findOne({ where: { phone } });
+    const user = await User.findOne({ where: { phone: targetPhone } });
     if (!user) throw new AppError('User not found.', 404);
 
     // 3. Hash new password and update
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(newPassword, salt);
+    const hashedPassword = await bcrypt.hash(targetPassword, salt);
     
     user.password = hashedPassword;
     await user.save();
@@ -440,6 +505,7 @@ module.exports = {
     loginUser,
     sendOtp,
     verifyOtp,
+    verifyResetOtp,
     resetPassword,
     changePassword,
     logoutUser,

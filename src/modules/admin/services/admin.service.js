@@ -14,6 +14,7 @@ const {
 } = require('../../../shared/constants/userConstants');
 const { createNotification } = require('../../notifications/services/notification.service');
 const { NOTIFICATION_TYPES, NOTIFICATION_TARGET_ROLES } = require('../../../shared/constants/notificationConstants');
+const { validateTutorSubjects } = require('../../../shared/utils/subjectValidator');
 
 /**
  * Format a TutorProfile database record into the Admin Frontend TutorRegistration shape.
@@ -54,6 +55,7 @@ const formatTutorRegistration = (tutor) => {
         location: tutor.location || `${tutor.city || ''}, ${tutor.pincode || ''}`.trim(),
         pincode: tutor.pincode || '',
         address: tutor.address || tutor.location || '',
+        gender: tutor.gender || 'Not specified',
         professionalType: tutor.professionalType || 'Teacher',
         tutorType: tutor.tutorType || 'Not specified',
         specialization,
@@ -205,6 +207,7 @@ const registerTutorByAdmin = async (data) => {
         name,
         email,
         phone,
+        gender,
         password = 'Password@123',
         professionalType = 'Teacher',
         tutorType = 'In-house',
@@ -292,6 +295,7 @@ const registerTutorByAdmin = async (data) => {
         const tutor = await TutorProfile.create({
             userId: user.id,
             fullName: name,
+            gender: gender ? (gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase()) : null,
             avatarUrl: avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0046C0&color=fff`,
             city: city || 'Hyderabad',
             pincode: pincode || '500001',
@@ -323,17 +327,17 @@ const registerTutorByAdmin = async (data) => {
         ].filter(Boolean);
 
         if (subjectIdentifiers.length > 0) {
-            const matchedSubjects = await Subject.findAll({
-                where: {
-                    [Op.or]: [
-                        { id: { [Op.in]: subjectIdentifiers } },
-                        { name: { [Op.in]: subjectIdentifiers } }
-                    ]
-                },
-                transaction: t
-            });
+            const matchedSubjects = await validateTutorSubjects(
+                professionalType || PROFESSIONAL_TYPES.TEACHER,
+                subjectIdentifiers,
+                { transaction: t }
+            );
+
             if (matchedSubjects.length > 0) {
                 await tutor.setSubjects(matchedSubjects, { transaction: t });
+                await tutor.update({
+                    areasOfPractice: matchedSubjects.map(s => s.name)
+                }, { transaction: t });
             }
         }
 
@@ -700,7 +704,21 @@ const getParentRegistrations = async (query = {}) => {
                 {
                     model: ChildProfile,
                     as: 'children',
-                    attributes: ['id', 'name', 'grade', 'dateOfBirth', 'learningGoals', 'schoolName'],
+                    where: { status: 'active' },
+                    required: false,
+                    attributes: [
+                        'id', 'name', 'gender', 'grade', 'dateOfBirth',
+                        'medicalInformation', 'preferredTutorGender', 'preferredMode',
+                        'preferredSchedule', 'learningGoals', 'schoolName', 'status'
+                    ],
+                    include: [
+                        {
+                            model: Subject,
+                            as: 'subjects',
+                            attributes: ['id', 'name'],
+                            through: { attributes: [] }
+                        }
+                    ]
                 },
             ],
         })
@@ -724,6 +742,35 @@ const getParentRegistrations = async (query = {}) => {
             if (!isNaN(parsed) && parsed > 0) childAge = parsed + 5;
         }
 
+        const children = (parent.children || []).map(c => {
+            let age = null;
+            if (c.dateOfBirth) {
+                const birthYear = new Date(c.dateOfBirth).getFullYear();
+                const currYear = new Date().getFullYear();
+                age = Math.max(1, currYear - birthYear);
+            } else if (c.grade) {
+                const parsed = parseInt(c.grade.replace(/\D/g, ''), 10);
+                if (!isNaN(parsed) && parsed > 0) age = parsed + 5;
+            }
+
+            return {
+                id: c.id,
+                name: c.name,
+                gender: c.gender || 'Not Specified',
+                dateOfBirth: c.dateOfBirth || null,
+                age: age || 8,
+                grade: c.grade || 'Not Specified',
+                condition: c.medicalInformation || 'None / General Tutoring',
+                preferredTutorGender: c.preferredTutorGender || 'Any',
+                preferredMode: c.preferredMode || 'online',
+                preferredSchedule: c.preferredSchedule || 'Flexible',
+                learningGoals: c.learningGoals || 'General Improvement',
+                schoolName: c.schoolName || null,
+                subjects: (c.subjects || []).map(s => s.name),
+                status: c.status || 'active'
+            };
+        });
+
         const requirement = primaryChild?.learningGoals
             ? primaryChild.learningGoals
             : (primaryChild?.grade ? `Tuition & Support for ${primaryChild.grade}` : 'Academic & Learning Support');
@@ -736,12 +783,7 @@ const getParentRegistrations = async (query = {}) => {
             location: parent.city ? `${parent.city}, ${parent.state || 'India'}` : (parent.location || 'India'),
             childName: primaryChild?.name || 'Child',
             childAge,
-            children: (parent.children || []).map(c => ({
-                id: c.id,
-                name: c.name,
-                grade: c.grade || 'Not Specified',
-                learningGoals: c.learningGoals || 'General Improvement',
-            })),
+            children,
             requirement,
             registrationDate: parent.createdAt ? parent.createdAt.toISOString() : new Date().toISOString(),
             status: 'Verified',

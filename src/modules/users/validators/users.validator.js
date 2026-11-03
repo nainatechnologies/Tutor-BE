@@ -3,14 +3,19 @@ const { z } = require('zod');
 // Schema for adding/updating a child
 const childSchema = z.object({
     name: z.string().min(2, "Child name must be at least 2 characters long"),
-    grade: z.string().min(1, "Grade is required"),
+    grade: z.string().nullable().optional().or(z.literal('')).transform(val => val && val.trim() ? val.trim() : null),
     preferredSchedule: z.string().min(1, "Preferred schedule is required"),
     learningGoals: z.string().nullable().optional(),
     preferredMode: z.string().nullable().optional(),
-    dateOfBirth: z.string().nullable().optional(), // Expected format YYYY-MM-DD
-    gender: z.string().nullable().optional(),
+    dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date of birth must be YYYY-MM-DD").nullable().optional().or(z.literal('')),
+    gender: z.enum(['Male', 'Female', 'Other', 'male', 'female', 'other'], {
+        errorMap: () => ({ message: "Gender must be 'Male', 'Female', or 'Other'" })
+    }).nullable().optional().or(z.literal('')).transform(val => val ? val.charAt(0).toUpperCase() + val.slice(1).toLowerCase() : null),
+    preferredTutorGender: z.enum(['Any', 'Female', 'Male', 'any', 'female', 'male', ''], {
+        errorMap: () => ({ message: "Preferred educator gender must be 'Any', 'Female', or 'Male'" })
+    }).nullable().optional().or(z.literal('')).transform(val => val && val.trim() ? (val.trim().toLowerCase() === 'any' ? 'Any' : val.trim().charAt(0).toUpperCase() + val.trim().slice(1).toLowerCase()) : 'Any'),
     schoolName: z.string().nullable().optional(),
-    medicalInformation: z.string().nullable().optional(),
+    medicalInformation: z.string().max(1500, "Medical notes must not exceed 1500 characters").nullable().optional().or(z.literal('')),
     emergencyContactName: z.string().nullable().optional(),
     emergencyContactPhone: z.string().regex(/^[0-9]{10}$/, "Phone must be exactly 10 digits").nullable().optional().or(z.literal('')),
     relationship: z.string().nullable().optional(),

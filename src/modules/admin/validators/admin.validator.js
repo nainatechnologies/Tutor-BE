@@ -7,6 +7,7 @@ const updateStatusSchema = z.object({
 
 const registerTutorSchema = z.object({
     name: z.string().min(1, 'Name is required'),
+    gender: z.enum(['Male', 'Female', 'Other', 'male', 'female', 'other']).optional().transform(val => val ? val.charAt(0).toUpperCase() + val.slice(1).toLowerCase() : undefined),
     email: z.string().email('Invalid email address'),
     phone: z.string().min(10, 'Valid phone number is required'),
     password: z.string().optional(),

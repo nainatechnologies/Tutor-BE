@@ -40,6 +40,14 @@ const sendSms = async (phone, otp, action) => {
             tid = process.env.SMS_TEMPLATE_ID || process.env.SPEAR_UC_TID_REGISTRATION; 
         }
 
+        // --- TEMPORARY LOCAL TEST MOCK (User testing flow; revert on "Done") ---
+        const TEMPORARY_TEST_MOCK = true;
+        if (TEMPORARY_TEST_MOCK) {
+            console.log(`[SMS MOCK] Local test mode active. Real OTP code ${otp} logged to console for ${phone}.`);
+            return { success: true, message: "Mock SMS sent successfully" };
+        }
+        // ------------------------------------------------------------------------
+
         if (process.env.SPEAR_UC_BASE_URL && process.env.SPEAR_UC_AUTH_KEY) {
             console.log(`[SMS] Sending live SMS via SpearUC to ${phone}...`);
             const params = new URLSearchParams({
@@ -56,9 +64,10 @@ const sendSms = async (phone, otp, action) => {
             console.log(`[SMS] SpearUC Response:`, response.data);
 
             if (response.data && response.data.status === 'error') {
-                console.error('[SMS] SpearUC returned error:', response.data);
+                console.error(`\n[SMS GATEWAY CRITICAL ERROR] Provider: SpearUC | Recipient: ${phone} | Reason: ${response.data.Message || 'Failed to deliver SMS'} | Action: Check credits / DLT registration at login4.spearuc.com`);
+                console.error('[SMS Error Payload]:', response.data);
                 const AppError = require('./AppError');
-                throw new AppError(`SMS Gateway: ${response.data.Message || 'Failed to deliver SMS'}`, 502);
+                throw new AppError('Unable to send verification code at this time. Please try again in a few minutes or contact support.', 503);
             }
 
             return response.data;
@@ -68,9 +77,9 @@ const sendSms = async (phone, otp, action) => {
         }
     } catch (error) {
         if (error.statusCode) throw error;
-        console.error(`[SMS] Error sending SMS via SpearUC:`, error.message);
+        console.error(`\n[SMS GATEWAY CRITICAL ERROR] Network/Transport failure for ${phone}:`, error.message);
         const AppError = require('./AppError');
-        throw new AppError('Failed to send SMS OTP. Please try again.', 500);
+        throw new AppError('Unable to send verification code at this time. Please try again in a few minutes or contact support.', 503);
     }
 };
 

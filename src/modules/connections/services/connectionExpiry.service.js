@@ -6,8 +6,8 @@ const { COIN_COSTS } = require('../../wallet/constants/wallet.constants');
 const { createNotification } = require('../../notifications/services/notification.service');
 const { NOTIFICATION_TYPES, NOTIFICATION_TARGET_ROLES } = require('../../../shared/constants/notificationConstants');
 
-const EXPIRY_DAYS = 7;
-const REMINDER_DAYS = 4;
+const EXPIRY_DAYS = process.env.CONNECTION_EXPIRY_DAYS ? parseInt(process.env.CONNECTION_EXPIRY_DAYS, 10) : 7;
+const REMINDER_DAYS = Math.max(1, Math.floor(EXPIRY_DAYS * 0.55));
 const REVIEW_PROMPT_HOURS = 48;
 
 /**
@@ -51,7 +51,7 @@ const expireStaleConnections = async () => {
             try {
                 // 1. Mark status as REJECTED with rejectionReason
                 conn.status = Connection.STATUS.REJECTED;
-                conn.rejectionReason = 'AUTO_EXPIRED_7_DAYS';
+                conn.rejectionReason = `AUTO_EXPIRED_${EXPIRY_DAYS}_DAYS`;
                 await conn.save();
                 expiredIds.push(conn.id);
 
@@ -75,11 +75,11 @@ const expireStaleConnections = async () => {
                             targetRole: NOTIFICATION_TARGET_ROLES.PARENT,
                             type: NOTIFICATION_TYPES.CONNECTION,
                             title: 'Connection Request Expired & Refunded',
-                            message: `Your connection request to ${tutorName} was not accepted within 7 days. Your 50 coins have been refunded to your wallet.`,
+                            message: `Your connection request to ${tutorName} was not accepted within ${EXPIRY_DAYS} days. Your 50 coins have been refunded to your wallet.`,
                             data: {
                                 connectionId: conn.id,
                                 status: Connection.STATUS.REJECTED,
-                                reason: 'AUTO_EXPIRED_7_DAYS',
+                                reason: `AUTO_EXPIRED_${EXPIRY_DAYS}_DAYS`,
                                 coinsRefunded: COIN_COSTS.PARENT_CONNECTION_COST,
                                 actionLabel: 'View Connections',
                                 actionRoute: '/connections',
@@ -99,11 +99,11 @@ const expireStaleConnections = async () => {
                             targetRole: NOTIFICATION_TARGET_ROLES.TUTOR,
                             type: NOTIFICATION_TYPES.CONNECTION,
                             title: 'Connection Request Expired',
-                            message: `A connection request from ${parentName} expired because it was not responded to within 7 days.`,
+                            message: `A connection request from ${parentName} expired because it was not responded to within ${EXPIRY_DAYS} days.`,
                             data: {
                                 connectionId: conn.id,
                                 status: Connection.STATUS.REJECTED,
-                                reason: 'AUTO_EXPIRED_7_DAYS',
+                                reason: `AUTO_EXPIRED_${EXPIRY_DAYS}_DAYS`,
                                 actionLabel: 'View Leads',
                                 actionRoute: '/tutor/leads',
                             },

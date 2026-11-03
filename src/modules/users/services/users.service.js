@@ -1,5 +1,6 @@
-const { ParentProfile, ChildProfile, TutorProfile, Subject, Category, User } = require('../models');
+const { ParentProfile, ChildProfile, TutorProfile, Subject, Category, User, Connection } = require('../models');
 const AppError = require('../../../shared/utils/AppError');
+const { validateTutorSubjects } = require('../../../shared/utils/subjectValidator');
 
 // 1. Get Logged-In User Profile
 const getUserProfile = async (userId, role) => {
@@ -13,6 +14,8 @@ const getUserProfile = async (userId, role) => {
                 {
                     model: ChildProfile,
                     as: 'children',
+                    where: { status: 'active' },
+                    required: false,
                     include: [
                         {
                             model: Subject,
@@ -70,38 +73,174 @@ const updateProfile = async (userId, role, updateData) => {
         });
         await profile.update(parentData);
 
-        // Simple sync for children if provided in the payload
+        // Smart in-place sync for children (Soft-archive on removal, guard active connections)
         if (children && Array.isArray(children)) {
             if (children.length > 2) {
                 throw new AppError('A parent can register a maximum of 2 children.', 400);
             }
-            const existingChildren = await ChildProfile.findAll({ where: { parentId: profile.id } });
-            for (const existing of existingChildren) {
-                await existing.setSubjects([]);
-                await existing.destroy();
-            }
-            
+
+            // 1. Fetch currently active children for this parent
+            const activeExistingChildren = await ChildProfile.findAll({
+                where: { parentId: profile.id, status: 'active' },
+                include: [{ model: Subject, as: 'subjects', attributes: ['id', 'name'] }]
+            });
+
+            // 2. Identify which active children are being removed
+            // An active child is kept if its ID or name matches an incoming child entry
+            const retainedExistingIds = new Set();
             for (const childData of children) {
-                const { subjectIds, subjects, ...childDetails } = childData;
-                const child = await ChildProfile.create({ parentId: profile.id, ...childDetails });
-                
+                if (childData.id) {
+                    const matchById = activeExistingChildren.find(ex => ex.id === childData.id);
+                    if (matchById) retainedExistingIds.add(matchById.id);
+                } else if (childData.name) {
+                    const matchByName = activeExistingChildren.find(
+                        ex => ex.name.trim().toLowerCase() === childData.name.trim().toLowerCase()
+                    );
+                    if (matchByName && !retainedExistingIds.has(matchByName.id)) {
+                        retainedExistingIds.add(matchByName.id);
+                    }
+                }
+            }
+
+            const childrenToRemove = activeExistingChildren.filter(ex => !retainedExistingIds.has(ex.id));
+
+            // 3. Guard: If any child is being removed, ensure they have NO active tutor connections
+            if (childrenToRemove.length > 0) {
+                const activeConnections = await Connection.findAll({
+                    where: {
+                        parentId: profile.id,
+                        status: [Connection.STATUS.PENDING, Connection.STATUS.ACCEPTED]
+                    }
+                });
+
+                for (const exChild of childrenToRemove) {
+                    const hasActiveConn = activeConnections.some(conn => {
+                        try {
+                            if (conn.message && typeof conn.message === 'string' && conn.message.trim().startsWith('{')) {
+                                const meta = JSON.parse(conn.message);
+                                if (meta.childId && meta.childId === exChild.id) return true;
+                                if (meta.childName && meta.childName.trim().toLowerCase() === exChild.name.trim().toLowerCase()) return true;
+                            }
+                        } catch {
+                            // parse error, fallback to count check if ambiguous
+                        }
+                        return activeExistingChildren.length === 1;
+                    });
+
+                    if (hasActiveConn) {
+                        throw new AppError(
+                            `Cannot remove child profile "${exChild.name}" while you have active connections with tutors. Please conclude or cancel your active tutor requests first.`,
+                            400
+                        );
+                    }
+                }
+
+                // 4. Soft-archive removed children (do NOT destroy rows, preserve audit & history)
+                for (const exChild of childrenToRemove) {
+                    await exChild.update({ status: 'archived' });
+                }
+            }
+
+            // 5. In-place update for existing children, or create for new children
+            for (const childData of children) {
+                const { subjectIds, subjects, id, ...childDetails } = childData;
+                let existingRecord = null;
+                if (id) {
+                    existingRecord = activeExistingChildren.find(ex => ex.id === id);
+                }
+                if (!existingRecord && childDetails.name) {
+                    existingRecord = activeExistingChildren.find(
+                        ex => ex.name.trim().toLowerCase() === childDetails.name.trim().toLowerCase()
+                    );
+                }
+
+                // Resolve subjects
                 let targetIds = Array.isArray(subjectIds) && subjectIds.length > 0 ? subjectIds : [];
                 if (targetIds.length === 0 && Array.isArray(subjects) && subjects.length > 0) {
                     const matched = await Subject.findAll({ where: { name: subjects } });
                     targetIds = matched.map(s => s.id);
                 }
 
-                if (targetIds.length > 0) {
-                    await child.setSubjects(targetIds);
+                if (existingRecord) {
+                    // Update in-place to preserve primary key UUID and all relation integrity
+                    await existingRecord.update({
+                        name: childDetails.name,
+                        grade: childDetails.grade !== undefined ? childDetails.grade : existingRecord.grade,
+                        dateOfBirth: childDetails.dateOfBirth !== undefined ? childDetails.dateOfBirth : existingRecord.dateOfBirth,
+                        gender: childDetails.gender !== undefined ? childDetails.gender : existingRecord.gender,
+                        preferredTutorGender: childDetails.preferredTutorGender !== undefined ? childDetails.preferredTutorGender : existingRecord.preferredTutorGender,
+                        medicalInformation: childDetails.medicalInformation !== undefined ? childDetails.medicalInformation : existingRecord.medicalInformation,
+                        learningGoals: childDetails.learningGoals !== undefined ? childDetails.learningGoals : existingRecord.learningGoals,
+                        preferredMode: childDetails.preferredMode !== undefined ? childDetails.preferredMode : existingRecord.preferredMode,
+                        preferredSchedule: childDetails.preferredSchedule !== undefined ? childDetails.preferredSchedule : existingRecord.preferredSchedule,
+                        schoolName: childDetails.schoolName !== undefined ? childDetails.schoolName : existingRecord.schoolName,
+                        emergencyContactName: childDetails.emergencyContactName !== undefined ? childDetails.emergencyContactName : existingRecord.emergencyContactName,
+                        emergencyContactPhone: childDetails.emergencyContactPhone !== undefined ? childDetails.emergencyContactPhone : existingRecord.emergencyContactPhone,
+                        relationship: childDetails.relationship !== undefined ? childDetails.relationship : existingRecord.relationship,
+                        status: 'active'
+                    });
+
+                    if (Array.isArray(subjectIds) || Array.isArray(subjects)) {
+                        await existingRecord.setSubjects(targetIds);
+                    }
+                } else {
+                    // Create new active child profile
+                    const newChild = await ChildProfile.create({
+                        parentId: profile.id,
+                        status: 'active',
+                        ...childDetails
+                    });
+                    if (targetIds.length > 0) {
+                        await newChild.setSubjects(targetIds);
+                    }
                 }
             }
         }
+
+        // Reload parent profile with active children and their subjects so caller gets fresh state with IDs
+        await profile.reload({
+            include: [
+                {
+                    model: ChildProfile,
+                    as: 'children',
+                    where: { status: 'active' },
+                    required: false,
+                    include: [
+                        {
+                            model: Subject,
+                            as: 'subjects',
+                            attributes: ['id', 'name'],
+                            through: { attributes: [] }
+                        }
+                    ]
+                }
+            ]
+        });
+
         return profile;
     } else if (normalizedRole === 'TUTOR') {
         const profile = await TutorProfile.findOne({ where: { userId } });
         if (!profile) throw new AppError('Tutor profile not found', 404);
         
         const { subjectIds, ...tutorData } = updateData;
+
+        // Determine effective professional type
+        const effectiveProfessionalType = tutorData.professionalType || profile.professionalType || 'Teacher';
+
+        // Enforce SSOT: Teacher -> ACADEMIC subjects, Therapist -> SERVICE subjects
+        if (Array.isArray(subjectIds) && subjectIds.length > 0) {
+            const validatedSubjects = await validateTutorSubjects(effectiveProfessionalType, subjectIds);
+            // Sync areasOfPractice with subject names for data consistency
+            tutorData.areasOfPractice = validatedSubjects.map(s => s.name);
+        } else if (tutorData.professionalType && tutorData.professionalType !== profile.professionalType) {
+            // Tutor changed their professional type without passing new subjects:
+            // Check if existing subjects are compatible
+            const existingSubjects = await profile.getSubjects({ include: [{ model: Category, as: 'category' }] });
+            if (existingSubjects.length > 0) {
+                await validateTutorSubjects(effectiveProfessionalType, existingSubjects.map(s => s.id));
+            }
+        }
+
         await profile.update(tutorData);
 
         if (Array.isArray(subjectIds)) {

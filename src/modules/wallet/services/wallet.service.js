@@ -428,7 +428,31 @@ const refundCoins = async (userId, payload) => {
         const wallet = await getOrCreateWallet(userId, t);
         const newBalance = wallet.balance + amount;
 
-        await wallet.update({ balance: newBalance }, { transaction: t });
+        // Grace Validity Period for Refunds:
+        // If wallet is already expired or expiring in less than 7 days, grant a minimum 7-day grace extension from today
+        // so the user can immediately use their refunded coins to connect with other tutors.
+        const now = new Date();
+        const graceDays = process.env.REFUND_GRACE_DAYS ? parseInt(process.env.REFUND_GRACE_DAYS, 10) : (COIN_COSTS.REFUND_GRACE_DAYS || 7);
+        const minValidity = new Date(now.getTime() + graceDays * 24 * 60 * 60 * 1000);
+        let newValidUntil = wallet.validUntil;
+        if (!wallet.validUntil || new Date(wallet.validUntil) < minValidity) {
+            newValidUntil = minValidity;
+        }
+
+        await wallet.update({
+            balance: newBalance,
+            validUntil: newValidUntil,
+        }, { transaction: t });
+
+        // Keep ParentProfile walletBalance in sync if parent user
+        try {
+            await ParentProfile.update(
+                { walletBalance: newBalance },
+                { where: { userId }, transaction: t }
+            );
+        } catch {
+            // Ignored if model not present
+        }
 
         const txn = await WalletTransaction.create({
             walletId: wallet.id,

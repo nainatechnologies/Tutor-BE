@@ -65,10 +65,19 @@ const sendOtp = async (req, res, next) => {
 
 
 
+const verifyResetOtp = async (req, res, next) => {
+    try {
+        const { phone, otp } = req.body;
+        const result = await authService.verifyResetOtp(phone, otp);
+        return sendSuccess(res, result, 'OTP verified successfully.', 200);
+    } catch (error) {
+        next(error);
+    }
+};
+
 const resetPassword = async (req, res, next) => {
     try {
-        const { phone, otp, newPassword } = req.body;
-        await authService.resetPassword(phone, newPassword, otp);
+        await authService.resetPassword(req.body);
         return sendSuccess(res, null, 'Password reset successfully. You can now login.', 200);
     } catch (error) {
         next(error);
@@ -99,6 +108,7 @@ module.exports = {
     register,
     login,
     sendOtp,
+    verifyResetOtp,
     resetPassword,
     changePassword,
     logout,

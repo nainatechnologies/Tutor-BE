@@ -22,6 +22,7 @@ const COIN_COSTS = Object.freeze({
     PARENT_CONNECTION_COST: 50,
     TUTOR_LEAD_COST: 30,
     DEFAULT_VALIDITY_DAYS: 30,
+    REFUND_GRACE_DAYS: 7,
 });
 
 const PARENT_COIN_PACKAGES = Object.freeze([

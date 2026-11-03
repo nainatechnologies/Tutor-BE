@@ -10,6 +10,7 @@ exports.searchTutors = async (req, res, next) => {
             childId: req.query.childId,
             tutorType: req.query.tutorType,
             professionalType: req.query.professionalType,
+            gender: req.query.gender,
             maxFee: req.query.maxFee ? parseFloat(req.query.maxFee) : undefined,
             page: req.query.page ? parseInt(req.query.page, 10) : 1,
             limit: req.query.limit ? parseInt(req.query.limit, 10) : 10,

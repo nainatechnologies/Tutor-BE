@@ -29,6 +29,11 @@ const ChildProfile = sequelize.define('ChildProfile', {
         type: DataTypes.STRING(20),
         allowNull: true,
     },
+    preferredTutorGender: {
+        type: DataTypes.STRING(20),
+        allowNull: true,
+        defaultValue: 'Any',
+    },
     grade: {
         type: DataTypes.STRING(50),
         allowNull: true,

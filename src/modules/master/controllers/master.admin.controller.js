@@ -2,7 +2,7 @@ const masterService = require('../services/master.service');
 
 const getCategories = async (req, res, next) => {
     try {
-        const data = await masterService.getAdminCategories();
+        const data = await masterService.getAdminCategories(req.query);
         res.status(200).json({ success: true, data });
     } catch (error) {
         next(error);

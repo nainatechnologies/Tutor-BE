@@ -9,6 +9,7 @@ const registerSchema = z.object({
     phone: z.string().regex(/^[6-9][0-9]{9}$/, "Phone number must be a valid 10-digit mobile number"),
     password: z.string().min(8, "Password must be at least 8 characters long"),
     name: z.string().min(2, "Name must be at least 2 characters long"),
+    gender: z.enum(['Male', 'Female', 'Other', 'male', 'female', 'other']).optional().transform(val => val ? val.charAt(0).toUpperCase() + val.slice(1).toLowerCase() : undefined),
     city: z.string().optional(),
     pincode: z.string().regex(/^[0-9]{6}$/, "Pincode must be exactly 6 digits").optional(),
     
@@ -45,15 +46,24 @@ const sendOtpSchema = z.object({
     path: ["phone"]
 });
 
-const resetPasswordSchema = z.object({
+const verifyResetOtpSchema = z.object({
     phone: z.string().regex(/^[6-9][0-9]{9}$/, "Phone must be a valid 10-digit mobile number"),
-    otp: z.string().length(6, "OTP must be exactly 6 digits"),
+    otp: z.string().length(6, "OTP must be exactly 6 digits")
+});
+
+const resetPasswordSchema = z.object({
+    phone: z.string().regex(/^[6-9][0-9]{9}$/, "Phone must be a valid 10-digit mobile number").optional(),
+    otp: z.string().length(6, "OTP must be exactly 6 digits").optional(),
+    resetToken: z.string().min(10, "Reset token is required").optional(),
     newPassword: z.string()
         .min(8, "Password must be at least 8 characters long")
         .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
         .regex(/[a-z]/, "Password must contain at least one lowercase letter")
         .regex(/\d/, "Password must contain at least one number")
         .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character")
+}).refine(data => data.resetToken || (data.phone && data.otp), {
+    message: "Either resetToken or both phone and otp are required",
+    path: ["resetToken"]
 });
 
 const changePasswordSchema = z.object({
@@ -85,6 +95,7 @@ module.exports = {
     registerSchema,
     loginSchema,
     sendOtpSchema,
+    verifyResetOtpSchema,
     resetPasswordSchema,
     changePasswordSchema
 };

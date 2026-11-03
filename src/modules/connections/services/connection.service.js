@@ -1,4 +1,4 @@
-const { Connection, TutorProfile, ParentProfile, User } = require('../../users/models');
+const { Connection, TutorProfile, ParentProfile, ChildProfile, User } = require('../../users/models');
 const walletService = require('../../wallet/services/wallet.service');
 const { COIN_COSTS, TRANSACTION_TYPE } = require('../../wallet/constants/wallet.constants');
 const { createNotification } = require('../../notifications/services/notification.service');
@@ -10,6 +10,12 @@ const requestConnection = async (parentId, tutorId, message) => {
     const parent = await ParentProfile.findByPk(parentId);
     if (!parent) {
         throw new AppError('Parent profile not found', 404);
+    }
+
+    // Guard: Parent must have at least one registered child before booking
+    const childCount = await ChildProfile.count({ where: { parentId, status: 'active' } });
+    if (childCount === 0) {
+        throw new AppError('You must register at least one child profile before requesting a tutor.', 400);
     }
 
     // Check if tutor exists (support tutor profile ID or user ID)
@@ -107,6 +113,11 @@ const getParentConnections = async (parentId) => {
         } else {
             plain.isContactLocked = false;
         }
+        const expiryDays = process.env.CONNECTION_EXPIRY_DAYS ? parseInt(process.env.CONNECTION_EXPIRY_DAYS, 10) : 7;
+        const createdAtMs = new Date(plain.createdAt || Date.now()).getTime();
+        plain.expiresAt = new Date(createdAtMs + expiryDays * 24 * 60 * 60 * 1000).toISOString();
+        plain.isExpired = plain.status === Connection.STATUS.REJECTED && (typeof plain.rejectionReason === 'string' && plain.rejectionReason.startsWith('AUTO_EXPIRED'));
+        plain.canUnlock = plain.status === Connection.STATUS.PENDING;
         return plain;
     });
 };
@@ -140,6 +151,11 @@ const getTutorConnections = async (tutorProfileOrUserId) => {
         } else {
             plain.isContactLocked = false;
         }
+        const expiryDays = process.env.CONNECTION_EXPIRY_DAYS ? parseInt(process.env.CONNECTION_EXPIRY_DAYS, 10) : 7;
+        const createdAtMs = new Date(plain.createdAt || Date.now()).getTime();
+        plain.expiresAt = new Date(createdAtMs + expiryDays * 24 * 60 * 60 * 1000).toISOString();
+        plain.isExpired = plain.status === Connection.STATUS.REJECTED && (typeof plain.rejectionReason === 'string' && plain.rejectionReason.startsWith('AUTO_EXPIRED'));
+        plain.canUnlock = plain.status === Connection.STATUS.PENDING;
         return plain;
     });
 };

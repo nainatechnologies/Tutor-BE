@@ -1,6 +1,7 @@
 const { Category, Subject, TutorProfile, ChildProfile } = require('../../users/models');
 const { Op } = require('sequelize');
 const AppError = require('../../../shared/utils/AppError');
+const { CONDITIONS_CONFIG } = require('../constants/conditions.constants');
 
 const ensureUniqueName = async (model, name, excludedId) => {
     const where = { name };
@@ -32,10 +33,31 @@ const categoryInclude = [{
     required: false,
 }];
 
-const getAdminCategories = async () => Category.findAll({
-    include: categoryInclude,
-    order: [['type', 'ASC'], ['name', 'ASC'], [{ model: Subject, as: 'subjects' }, 'name', 'ASC']],
-});
+const getAdminCategories = async (query = {}) => {
+    const where = {};
+    if (query.type) {
+        where.type = query.type.toUpperCase();
+    } else if (query.professionalType) {
+        const pType = query.professionalType.trim().toLowerCase();
+        if (pType === 'teacher') where.type = 'ACADEMIC';
+        else if (pType === 'therapist') where.type = 'SERVICE';
+    } else if (query.condition) {
+        const condParam = query.condition.trim().toLowerCase();
+        const matched = CONDITIONS_CONFIG.find(c => 
+            c.name.toLowerCase() === condParam || c.id.toLowerCase() === condParam
+        );
+        if (matched) {
+            if (matched.categoryType === 'ACADEMIC') where.type = 'ACADEMIC';
+            else if (matched.categoryType === 'SERVICE') where.type = 'SERVICE';
+        }
+    }
+
+    return Category.findAll({
+        where,
+        include: categoryInclude,
+        order: [['type', 'ASC'], ['name', 'ASC'], [{ model: Subject, as: 'subjects' }, 'name', 'ASC']],
+    });
+};
 
 const createCategory = async ({ name, type }) => {
     await ensureUniqueName(Category, name);

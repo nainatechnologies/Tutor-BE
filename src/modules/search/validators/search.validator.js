@@ -9,6 +9,7 @@ const searchTutorsQuerySchema = z.object({
     childId: z.string().uuid("Invalid child ID").optional().or(z.literal('all')).or(z.literal('')),
     tutorType: z.string().trim().optional(),
     professionalType: z.string().trim().optional(),
+    gender: z.string().trim().optional(),
     maxFee: z.coerce.number().positive("Max fee must be a positive number").optional(),
     page: z.coerce.number().int().min(1).default(1).optional(),
     limit: z.coerce.number().int().min(1).max(100).default(10).optional(),

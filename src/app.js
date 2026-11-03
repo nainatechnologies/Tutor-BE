@@ -22,6 +22,7 @@ app.use(cors({
         // 1. Allow non-browser requests (Postman, mobile apps, server-to-server)
         if (!origin) return callback(null, true);
 
+
         const cleanOrigin = origin.replace(/\/$/, '');
 
         // 2. Allow localhost and 127.0.0.1 in development mode only

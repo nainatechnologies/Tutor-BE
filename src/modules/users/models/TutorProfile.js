@@ -26,6 +26,10 @@ const TutorProfile = sequelize.define('TutorProfile', {
         type: DataTypes.STRING(50),
         allowNull: false,
     },
+    gender: {
+        type: DataTypes.STRING(20),
+        allowNull: true,
+    },
     avatarUrl: {
         type: DataTypes.STRING(500),
         allowNull: true,
@@ -230,6 +234,7 @@ const TutorProfile = sequelize.define('TutorProfile', {
     tableName: 'tutor_profiles',
     timestamps: true,
     indexes: [
+        { fields: ['gender'] },
         { fields: ['pincode'] },
         { fields: ['city'] },
         { fields: ['tutorType'] },
