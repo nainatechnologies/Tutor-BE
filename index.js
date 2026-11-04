@@ -91,6 +91,14 @@ const ensureSchemaUpdates = async (sequelize) => {
             if (!tutorTable.viewsCount) {
                 await sequelize.query("ALTER TABLE `tutor_profiles` ADD COLUMN `viewsCount` INT NOT NULL DEFAULT 0;");
             }
+            if (!tutorTable.subscriptionTier) {
+                try {
+                    await sequelize.query("ALTER TABLE `tutor_profiles` ADD COLUMN `subscriptionTier` VARCHAR(20) NOT NULL DEFAULT 'NONE';");
+                    console.log('Added subscriptionTier column to tutor_profiles.');
+                } catch (colErr) {
+                    console.warn('subscriptionTier column note:', colErr.message);
+                }
+            }
         }
 
         const hasComplaints = tables.some(t => (typeof t === 'string' ? t : t.tableName || '').toLowerCase() === 'complaints');

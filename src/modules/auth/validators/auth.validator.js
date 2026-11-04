@@ -24,6 +24,9 @@ const registerSchema = z.object({
     
     // Tutor specific
     aadharNumber: z.string().regex(/^[0-9]{12}$/, "Aadhar must be exactly 12 digits").optional(),
+    perSessionFee: z.union([z.string(), z.number()]).optional(),
+    perHourFee: z.union([z.string(), z.number()]).optional(),
+    monthlyEstimateFee: z.union([z.string(), z.number()]).optional(),
     
     // Subjects array for the Junction Table
     subjectIds: z.array(z.string().uuid("Invalid subject ID")).optional(),

@@ -132,6 +132,11 @@ const TutorProfile = sequelize.define('TutorProfile', {
         allowNull: false,
         defaultValue: 0.00,
     },
+    perHourFee: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: true,
+        defaultValue: null,
+    },
     monthlyEstimateFee: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: false,

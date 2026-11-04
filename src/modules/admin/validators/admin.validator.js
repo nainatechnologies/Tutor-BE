@@ -25,6 +25,8 @@ const registerTutorSchema = z.object({
     subjects: z.array(z.string()).optional(),
     perSessionFee: z.union([z.string(), z.number()]).optional(),
     sessionFee: z.union([z.string(), z.number()]).optional(),
+    perHourFee: z.union([z.string(), z.number()]).optional(),
+    monthlyEstimateFee: z.union([z.string(), z.number()]).optional(),
     teachingModes: z.array(z.string()).optional(),
     mode: z.string().optional(),
     availability: z.any().optional(),

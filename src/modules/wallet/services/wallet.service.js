@@ -8,7 +8,7 @@
 
 const crypto = require('crypto');
 const sequelize = require('../../../config/database');
-const { Wallet, WalletTransaction, User, ParentProfile, Payment } = require('../../users/models');
+const { Wallet, WalletTransaction, User, ParentProfile, TutorProfile, Payment } = require('../../users/models');
 const { createNotification } = require('../../notifications/services/notification.service');
 const { NOTIFICATION_TYPES } = require('../../../shared/constants/notificationConstants');
 const AppError = require('../../../shared/utils/AppError');
@@ -191,28 +191,40 @@ const topupWallet = async (userId, roleOrPayload, maybePayload) => {
     const packages = getPackages(role);
     let pkg = packages.find(p => p.id === packageId);
     
-    // Fallback for legacy package ID aliases (e.g. cp1 -> cp_starter, cp2 -> cp_growth, cp4 -> cp_growth)
+    // Strictly match package aliases without silent fallbacks
     if (!pkg) {
         const isTutorRole = (role || '').toLowerCase() === 'tutor';
         if (isTutorRole) {
             if (packageId === '3m' || packageId === 'quarterly') pkg = packages.find(p => p.id === 'plan-3m');
+            else if (packageId === '6m' || packageId === 'half_yearly' || packageId === 'halfyearly') pkg = packages.find(p => p.id === 'plan-6m');
             else if (packageId === '12m' || packageId === 'annual' || packageId === 'yearly') pkg = packages.find(p => p.id === 'plan-12m');
-            else pkg = packages[0];
         } else {
-            if (packageId === 'cp1') pkg = packages.find(p => p.id === 'cp_starter') || packages[0];
-            else if (packageId === 'cp2' || packageId === 'cp3' || packageId === 'cp4') pkg = packages.find(p => p.id === 'cp_growth') || packages[1];
-            else if (packageId === 'cp5') pkg = packages.find(p => p.id === 'cp_annual') || packages[2];
-            else pkg = packages[0];
+            if (packageId === 'cp1') pkg = packages.find(p => p.id === 'cp_starter');
+            else if (packageId === 'cp2' || packageId === 'cp3' || packageId === 'cp4') pkg = packages.find(p => p.id === 'cp_growth');
+            else if (packageId === 'cp5') pkg = packages.find(p => p.id === 'cp_annual');
         }
     }
 
+    // Strict Role-Based Access Control on Coin Packages
     if (!pkg) {
-        throw new AppError('Invalid package specified', 400);
+        const isTutorRole = (role || '').toLowerCase() === 'tutor';
+        const isParentPackage = PARENT_COIN_PACKAGES.some(p => p.id === packageId);
+        const isTutorPackage = TUTOR_COIN_PACKAGES.some(p => p.id === packageId);
+        if (isTutorRole && isParentPackage) {
+            throw new AppError('Access denied: Parent coin packages (₹399/₹899/₹1599) cannot be purchased by Tutors. Please select a Tutor Plan.', 403);
+        }
+        if (!isTutorRole && isTutorPackage) {
+            throw new AppError('Access denied: Tutor plans cannot be purchased by Parents. Please select a Parent Coin Package.', 403);
+        }
+        throw new AppError('Invalid package specified for your account role', 400);
     }
 
-    // Verify payment signature if provided
-    if (razorpaySignature && !verifyRazorpaySignature(razorpayOrderId, razorpayPaymentId, razorpaySignature)) {
-        throw new AppError('Payment signature verification failed', 400);
+    // Verify payment signature
+    const isDevBypass = process.env.NODE_ENV === 'development' && razorpayPaymentId === 'dev_bypass';
+    if (!isDevBypass) {
+        if (!razorpaySignature || !razorpayOrderId || !verifyRazorpaySignature(razorpayOrderId, razorpayPaymentId, razorpaySignature)) {
+            throw new AppError('Payment signature verification failed', 400);
+        }
     }
 
     const t = await sequelize.transaction();
@@ -253,6 +265,28 @@ const topupWallet = async (userId, roleOrPayload, maybePayload) => {
             );
         } catch {
             // Ignored if model not present
+        }
+
+        // Keep TutorProfile subscriptionTier & featured perks in sync if tutor user
+        const isTutorRole = (role || '').toLowerCase() === 'tutor';
+        if (isTutorRole && TutorProfile) {
+            try {
+                let tier = 'STARTER';
+                let isFeatured = false;
+                if (pkg.id === 'plan-6m') {
+                    tier = 'GROWTH';
+                    isFeatured = true;
+                } else if (pkg.id === 'plan-12m') {
+                    tier = 'PRO';
+                    isFeatured = true;
+                }
+                await TutorProfile.update(
+                    { subscriptionTier: tier, featured: isFeatured },
+                    { where: { userId }, transaction: t }
+                );
+            } catch (tutorErr) {
+                console.warn('Tutor profile perk sync note:', tutorErr.message);
+            }
         }
 
         const txn = await WalletTransaction.create({

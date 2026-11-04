@@ -1,4 +1,56 @@
-const { ParentProfile, ChildProfile, TutorProfile, Subject, Category, User, Connection } = require('../models');
+const { ParentProfile, ChildProfile, TutorProfile, Subject, Category, User, Connection, Notification } = require('../models');
+const sequelize = require('../../../config/database');
+const { NOTIFICATION_TYPES, NOTIFICATION_TARGET_ROLES } = require('../../../shared/constants/notificationConstants');
+
+/**
+ * Sync Admin registration notification with newly saved profile location and name
+ */
+const syncAdminRegistrationNotification = async (userId, role, profile) => {
+    try {
+        const city = profile?.city || null;
+        const pincode = profile?.pincode || null;
+        const name = profile?.fullName || null;
+
+        const locStr = city ? `${city}${pincode ? ` (${pincode})` : ''}` : (pincode ? `pincode ${pincode}` : null);
+        const normalizedRole = (role || '').toUpperCase();
+
+        let updatedMessage = '';
+        if (normalizedRole === 'TUTOR') {
+            updatedMessage = locStr
+                ? `New tutor "${name || 'Tutor'}" has registered from ${locStr} and is awaiting review & approval.`
+                : `New tutor "${name || 'Tutor'}" has registered and is awaiting review & approval.`;
+        } else {
+            updatedMessage = locStr
+                ? `New parent "${name || 'Parent'}" has registered from ${locStr}.`
+                : `New parent "${name || 'Parent'}" has registered.`;
+        }
+
+        const existingNotif = await Notification.findOne({
+            where: {
+                targetRole: NOTIFICATION_TARGET_ROLES.ADMIN,
+                type: NOTIFICATION_TYPES.REGISTRATION,
+                [sequelize.Sequelize.Op.and]: [
+                    sequelize.literal(`JSON_UNQUOTE(JSON_EXTRACT(data, '$.userId')) = '${userId}'`)
+                ]
+            }
+        });
+
+        if (existingNotif) {
+            const mergedData = {
+                ...(existingNotif.data || {}),
+                name: name || existingNotif.data?.name,
+                city: city || existingNotif.data?.city,
+                pincode: pincode || existingNotif.data?.pincode,
+            };
+            await existingNotif.update({
+                message: updatedMessage,
+                data: mergedData,
+            });
+        }
+    } catch (err) {
+        console.warn('[Users Service] Admin registration notification sync note:', err?.message);
+    }
+};
 const AppError = require('../../../shared/utils/AppError');
 const { validateTutorSubjects } = require('../../../shared/utils/subjectValidator');
 
@@ -217,6 +269,9 @@ const updateProfile = async (userId, role, updateData) => {
             ]
         });
 
+        // Sync admin notification with freshly updated parent details
+        await syncAdminRegistrationNotification(userId, 'PARENT', profile);
+
         return profile;
     } else if (normalizedRole === 'TUTOR') {
         const profile = await TutorProfile.findOne({ where: { userId } });
@@ -226,6 +281,27 @@ const updateProfile = async (userId, role, updateData) => {
 
         // Determine effective professional type
         const effectiveProfessionalType = tutorData.professionalType || profile.professionalType || 'Teacher';
+
+        // Auto-harmonize rates based on professionalType
+        if (effectiveProfessionalType === 'Teacher') {
+            if (tutorData.perHourFee !== undefined) {
+                tutorData.perHourFee = parseFloat(tutorData.perHourFee) || 0;
+                tutorData.perSessionFee = tutorData.perHourFee;
+            } else if (tutorData.perSessionFee !== undefined) {
+                tutorData.perSessionFee = parseFloat(tutorData.perSessionFee) || 0;
+                tutorData.perHourFee = tutorData.perSessionFee;
+            }
+        } else if (effectiveProfessionalType === 'Therapist') {
+            if (tutorData.perSessionFee !== undefined) {
+                tutorData.perSessionFee = parseFloat(tutorData.perSessionFee) || 0;
+            }
+        }
+        if (tutorData.monthlyEstimateFee !== undefined) {
+            tutorData.monthlyEstimateFee = parseFloat(tutorData.monthlyEstimateFee) || 0;
+        } else if ((tutorData.perSessionFee || tutorData.perHourFee) && !profile.monthlyEstimateFee) {
+            const baseRate = tutorData.perSessionFee || tutorData.perHourFee || 0;
+            if (baseRate > 0) tutorData.monthlyEstimateFee = baseRate * 8;
+        }
 
         // Enforce SSOT: Teacher -> ACADEMIC subjects, Therapist -> SERVICE subjects
         if (Array.isArray(subjectIds) && subjectIds.length > 0) {
@@ -258,6 +334,10 @@ const updateProfile = async (userId, role, updateData) => {
                 }
             ]
         });
+
+        // Sync admin notification with freshly updated tutor details
+        await syncAdminRegistrationNotification(userId, 'TUTOR', profile);
+
         return profile;
     }
 };

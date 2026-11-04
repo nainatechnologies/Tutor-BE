@@ -87,6 +87,11 @@ const registerUser = async (data) => {
                 validatedSubjects = await validateTutorSubjects(tutorProfessionalType, subjectIds, { transaction });
             }
 
+            const parsedSessionFee = parseFloat(data.perSessionFee) || 0;
+            const parsedHourFee = parseFloat(data.perHourFee) || (tutorProfessionalType === 'Teacher' ? parsedSessionFee : null);
+            const effectiveSessionFee = tutorProfessionalType === 'Teacher' ? (parsedHourFee || parsedSessionFee) : parsedSessionFee;
+            const parsedMonthlyFee = parseFloat(data.monthlyEstimateFee) || (effectiveSessionFee ? effectiveSessionFee * 8 : 0);
+
             const tutor = await TutorProfile.create({
                 userId: user.id,
                 fullName: name,
@@ -96,6 +101,9 @@ const registerUser = async (data) => {
                 aadharNumber,
                 professionalType: tutorProfessionalType,
                 areasOfPractice: validatedSubjects ? validatedSubjects.map(s => s.name) : [],
+                perSessionFee: effectiveSessionFee,
+                perHourFee: parsedHourFee,
+                monthlyEstimateFee: parsedMonthlyFee,
             }, { transaction });
 
             // Automatically wire up the junction table if subject IDs were provided!
@@ -107,20 +115,25 @@ const registerUser = async (data) => {
         await transaction.commit();
 
         // Proactively notify Admin of new registrations in real time
+        const tutorLoc = city ? `${city}${pincode ? ` (${pincode})` : ''}` : (pincode ? `pincode ${pincode}` : null);
+        const parentLoc = city ? `${city}${pincode ? ` (${pincode})` : ''}` : (pincode ? `pincode ${pincode}` : null);
+
         if (role === 'TUTOR') {
             createNotification({
                 targetRole: NOTIFICATION_TARGET_ROLES.ADMIN,
                 type: NOTIFICATION_TYPES.REGISTRATION,
                 title: 'New Tutor Registration',
-                message: `New tutor "${name || email}" has registered from ${city || 'unspecified city'} (${pincode || 'no pincode'}) and is awaiting review & approval.`,
+                message: tutorLoc
+                    ? `New tutor "${name || email}" has registered from ${tutorLoc} and is awaiting review & approval.`
+                    : `New tutor "${name || email}" has registered and is awaiting review & approval.`,
                 data: {
                     userId: user.id,
                     role: 'TUTOR',
                     name: name || user.email,
                     email: user.email,
                     phone: user.phone,
-                    city,
-                    pincode,
+                    city: city || null,
+                    pincode: pincode || null,
                 },
             }).catch((notifErr) => console.warn('[Auth Service] Admin tutor registration notification note:', notifErr.message));
         } else if (role === 'PARENT') {
@@ -128,15 +141,17 @@ const registerUser = async (data) => {
                 targetRole: NOTIFICATION_TARGET_ROLES.ADMIN,
                 type: NOTIFICATION_TYPES.REGISTRATION,
                 title: 'New Parent Registration',
-                message: `New parent "${name || email}" has registered from ${city || 'unspecified city'}.`,
+                message: parentLoc
+                    ? `New parent "${name || email}" has registered from ${parentLoc}.`
+                    : `New parent "${name || email}" has registered.`,
                 data: {
                     userId: user.id,
                     role: 'PARENT',
                     name: name || user.email,
                     email: user.email,
                     phone: user.phone,
-                    city,
-                    pincode,
+                    city: city || null,
+                    pincode: pincode || null,
                 },
             }).catch((notifErr) => console.warn('[Auth Service] Admin parent registration notification note:', notifErr.message));
         }

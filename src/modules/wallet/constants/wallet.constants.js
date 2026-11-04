@@ -31,7 +31,7 @@ const PARENT_COIN_PACKAGES = Object.freeze([
         name: 'Starter Pack',
         coins: 150,
         bonus: 0,
-        price: 299,
+        price: 399,
         validityDays: 60,
         tutors: 3,
         popular: false,
@@ -42,7 +42,7 @@ const PARENT_COIN_PACKAGES = Object.freeze([
         name: 'Growth Pack',
         coins: 400,
         bonus: 0,
-        price: 699,
+        price: 899,
         validityDays: 180,
         tutors: 8,
         popular: true,
@@ -53,7 +53,7 @@ const PARENT_COIN_PACKAGES = Object.freeze([
         name: 'Annual Family Pass',
         coins: 800,
         bonus: 100,
-        price: 1299,
+        price: 1599,
         validityDays: 365,
         tutors: 18,
         popular: false,
@@ -62,8 +62,9 @@ const PARENT_COIN_PACKAGES = Object.freeze([
 ]);
 
 const TUTOR_COIN_PACKAGES = Object.freeze([
-    { id: 'plan-3m', name: '3 Month Plan', coins: 300, bonus: 0, price: 1398, validityDays: 90 },
-    { id: 'plan-12m', name: '12 Month Plan', coins: 1500, bonus: 0, price: 4800, validityDays: 365 },
+    { id: 'plan-3m', name: 'Starter Plan · 3 Months', coins: 300, bonus: 0, price: 1799, validityDays: 90 },
+    { id: 'plan-6m', name: 'Growth Plan · 6 Months', coins: 600, bonus: 0, price: 2999, validityDays: 180 },
+    { id: 'plan-12m', name: 'Professional Pass · 1 Year', coins: 1200, bonus: 0, price: 4799, validityDays: 365 },
 ]);
 
 module.exports = {

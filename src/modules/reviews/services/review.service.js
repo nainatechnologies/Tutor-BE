@@ -198,6 +198,31 @@ const createReview = async (userId, data) => {
                 };
             });
         }
+    } else if (targetType === REVIEW_TARGET_TYPE.PLATFORM) {
+        // Check if user already wrote an active review for the platform
+        const existingPlatformReview = await Review.findOne({
+            where: {
+                reviewerId: userId,
+                targetType: REVIEW_TARGET_TYPE.PLATFORM,
+            },
+        });
+
+        if (existingPlatformReview) {
+            return await sequelize.transaction(async (t) => {
+                existingPlatformReview.rating = numRating;
+                existingPlatformReview.comment = comment || existingPlatformReview.comment;
+                if (subject) existingPlatformReview.subject = subject;
+                existingPlatformReview.status = REVIEW_STATUS.PENDING;
+                await existingPlatformReview.save({ transaction: t });
+
+                return {
+                    review: existingPlatformReview,
+                    updatedTutorRating: null,
+                    updatedParentRating: null,
+                    updatedReviewCount: null,
+                };
+            });
+        }
     }
 
     // Atomic transaction for creating review & recalculating ratings

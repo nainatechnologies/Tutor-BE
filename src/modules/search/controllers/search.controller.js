@@ -8,12 +8,24 @@ exports.searchTutors = async (req, res, next) => {
             pincode: req.query.pincode,
             subjectId: req.query.subjectId,
             childId: req.query.childId,
+            parentId: req.query.parentId,
+            childIds: req.query.childIds,
+            explore: req.query.explore,
             tutorType: req.query.tutorType,
             professionalType: req.query.professionalType,
             gender: req.query.gender,
+            minFee: req.query.minFee ? parseFloat(req.query.minFee) : undefined,
             maxFee: req.query.maxFee ? parseFloat(req.query.maxFee) : undefined,
+            minSessionFee: req.query.minSessionFee ? parseFloat(req.query.minSessionFee) : undefined,
+            maxSessionFee: req.query.maxSessionFee ? parseFloat(req.query.maxSessionFee) : undefined,
+            minMonthlyFee: req.query.minMonthlyFee ? parseFloat(req.query.minMonthlyFee) : undefined,
+            maxMonthlyFee: req.query.maxMonthlyFee ? parseFloat(req.query.maxMonthlyFee) : undefined,
+            minRating: req.query.minRating ? parseFloat(req.query.minRating) : undefined,
+            minExperience: req.query.minExperience ? parseInt(req.query.minExperience, 10) : undefined,
+            teachingMode: req.query.teachingMode,
+            sortBy: req.query.sortBy || 'relevance',
             page: req.query.page ? parseInt(req.query.page, 10) : 1,
-            limit: req.query.limit ? parseInt(req.query.limit, 10) : 10,
+            limit: req.query.limit ? parseInt(req.query.limit, 10) : 12,
         };
 
         const results = await searchService.searchTutors(filters);
@@ -38,7 +50,6 @@ exports.getTutorById = async (req, res, next) => {
         next(error);
     }
 };
-
 
 exports.autocomplete = async (req, res, next) => {
     try {

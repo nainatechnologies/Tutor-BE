@@ -67,6 +67,10 @@ const formatTutorRegistration = (tutor) => {
         rejectionReason: tutor.rejectionReason || '',
         documents,
         rciNumber: tutor.rciNumber || '',
+        perHourFee: tutor.perHourFee !== null ? parseFloat(tutor.perHourFee) : null,
+        perSessionFee: tutor.perSessionFee !== null ? parseFloat(tutor.perSessionFee) : null,
+        sessionFee: tutor.perSessionFee !== null ? parseFloat(tutor.perSessionFee) : null,
+        monthlyEstimateFee: tutor.monthlyEstimateFee !== null ? parseFloat(tutor.monthlyEstimateFee) : null,
     };
 };
 
@@ -265,8 +269,10 @@ const registerTutorByAdmin = async (data) => {
         const expYears = parseFloat(experience) || (experience ? parseFloat(experience.replace(/[^\d.]/g, '')) || 0 : 0);
 
         // Parse fee and modes
-        const feeVal = perSessionFee || sessionFee || 0;
-        const parsedFee = parseFloat(feeVal) || 0;
+        const parsedSessionFee = parseFloat(perSessionFee || sessionFee) || 0;
+        const parsedHourFee = parseFloat(data.perHourFee) || (professionalType === 'Teacher' ? parsedSessionFee : null);
+        const effectiveSessionFee = professionalType === 'Teacher' ? (parsedHourFee || parsedSessionFee) : parsedSessionFee;
+        const parsedMonthlyFee = parseFloat(data.monthlyEstimateFee) || (effectiveSessionFee ? effectiveSessionFee * 8 : 0);
 
         let modes = ['online'];
         if (Array.isArray(teachingModes) && teachingModes.length > 0) {
@@ -314,8 +320,9 @@ const registerTutorByAdmin = async (data) => {
             approvalStatus: APPROVAL_STATUSES.APPROVED,
             verified: true,
             areasOfPractice: specialization ? specialization.split(',').map(s => s.trim()) : [],
-            perSessionFee: parsedFee,
-            monthlyEstimateFee: parsedFee * 8,
+            perSessionFee: effectiveSessionFee,
+            perHourFee: parsedHourFee,
+            monthlyEstimateFee: parsedMonthlyFee,
             teachingModes: modes,
             availability: normalizedAvailability,
         }, { transaction: t });
@@ -574,14 +581,15 @@ const getAdminPayments = async (query = {}) => {
         if (role === 'tutor') {
             const pkg = TUTOR_COIN_PACKAGES.find(tp => tp.price === amt);
             if (pkg) return pkg.coins + (pkg.bonus || 0);
-            if (amt === 1398) return 300;
-            if (amt === 4800) return 1500;
+            if (amt === 1799 || amt === 1398) return 300;
+            if (amt === 2999) return 600;
+            if (amt === 4799 || amt === 4800) return 1200;
         } else {
             const pkg = PARENT_COIN_PACKAGES.find(pp => pp.price === amt);
             if (pkg) return pkg.coins + (pkg.bonus || 0);
-            if (amt === 299) return 150;
-            if (amt === 699) return 400;
-            if (amt === 1299) return 900;
+            if (amt === 399 || amt === 299) return 150;
+            if (amt === 899 || amt === 699) return 400;
+            if (amt === 1599 || amt === 1299) return 900;
         }
         return amt;
     };
@@ -789,13 +797,13 @@ const getParentRegistrations = async (query = {}) => {
             status: 'Verified',
             payment: latestPayment ? {
                 transactionId: latestPayment.razorpayPaymentId || latestPayment.id.slice(0, 10),
-                amount: parseFloat(latestPayment.amount) || 699,
+                amount: parseFloat(latestPayment.amount) || 899,
                 date: latestPayment.createdAt ? latestPayment.createdAt.toISOString() : parent.createdAt.toISOString(),
                 method: latestPayment.razorpayPaymentId ? 'Razorpay Online' : 'Online UPI/Card',
                 status: latestPayment.status === 'SUCCESS' ? 'Paid' : latestPayment.status,
             } : {
                 transactionId: `TXN-${parent.id.slice(0, 8).toUpperCase()}`,
-                amount: 699,
+                amount: 899,
                 date: parent.createdAt ? parent.createdAt.toISOString() : new Date().toISOString(),
                 method: 'Online Payment',
                 status: 'Paid',
