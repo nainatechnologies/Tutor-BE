@@ -196,6 +196,11 @@ const TutorProfile = sequelize.define('TutorProfile', {
         allowNull: false,
         defaultValue: false,
     },
+    subscriptionTier: {
+        type: DataTypes.STRING(20),
+        allowNull: false,
+        defaultValue: 'NONE',
+    },
     approvalStatus: {
         type: DataTypes.STRING(50),
         allowNull: false,
