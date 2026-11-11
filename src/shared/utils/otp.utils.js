@@ -36,14 +36,14 @@ const sendSms = async (phone, otp, action) => {
             throw new AppError('Invalid mobile number. Please provide a valid 10-digit mobile number.', 400);
         }
 
-        const tid = process.env.SPEAR_UC_TID_REGISTRATION || process.env.SMS_TEMPLATE_ID || '1777179421847838122';
+        const tid = process.env.SPEAR_UC_TID_REGISTRATION || process.env.SMS_TEMPLATE_ID || '1707173623405426000';
         
         let message = '';
-        if (tid === '1707173623405426000') {
-            message = `Dear Customer, your Registration OTP is ${otp} for True Mentor Login -Support Team RisiEdu`;
-        } else {
-            // Default to NAINA TECHNOLOGIES LLP approved DLT template (1777179421847838122)
+        if (tid === '1777179421847838122') {
             message = `Dear Customer, your NAINA TECHNOLOGIES LLP verification OTP is ${otp} Do not share this OTP with anyone.`;
+        } else {
+            // Working True Mentor DLT approved template (1707173623405426000)
+            message = `Dear Customer, your Registration OTP is ${otp} for True Mentor Login -Support Team RisiEdu`;
         }
 
         if (process.env.SPEAR_UC_BASE_URL && process.env.SPEAR_UC_AUTH_KEY) {
