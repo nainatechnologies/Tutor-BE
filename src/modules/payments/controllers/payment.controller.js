@@ -38,7 +38,10 @@ const createOrder = async (req, res, next) => {
 
         res.status(200).json({
             success: true,
-            data: order
+            data: {
+                ...order,
+                key: process.env.RAZORPAY_KEY_ID || 'rzp_test_TstBtRdy5rfaoV',
+            }
         });
     } catch (error) {
         console.error("Razorpay Error:", error);
