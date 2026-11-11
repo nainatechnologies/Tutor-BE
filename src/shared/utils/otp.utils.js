@@ -17,10 +17,10 @@ const verifyOtpHash = async (providedOtp, hashedOtp) => {
     return await bcrypt.compare(providedOtp, hashedOtp);
 };
 
-// Send SMS using SpearUC Gateway
+// Send SMS using SpearUC Gateway (Live in all environments)
 const sendSms = async (phone, otp, action) => {
     console.log(`\n======================================`);
-    console.log(`[SMS MOCK/LOG SERVER]`);
+    console.log(`[SMS DISPATCH - LIVE GATEWAY]`);
     console.log(`To: ${phone}`);
     console.log(`OTP Code: ${otp}`);
     console.log(`Action: ${action}`);
@@ -29,32 +29,30 @@ const sendSms = async (phone, otp, action) => {
     try {
         const { default: axios } = await import('axios');
         
-        let message = '';
-        let tid = '';
-        
-        if (action === 'REGISTER') {
-            message = `Dear Customer , your Registration OTP is ${otp} for True Mentor Login -Support Team RisiEdu`;
-            tid = process.env.SMS_TEMPLATE_ID || process.env.SPEAR_UC_TID_REGISTRATION; 
-        } else {
-            message = `Dear Customer , your Registration OTP is ${otp} for True Mentor Login -Support Team RisiEdu`; // Fallback to same approved template
-            tid = process.env.SMS_TEMPLATE_ID || process.env.SPEAR_UC_TID_REGISTRATION; 
+        const cleanPhone = (phone || '').replace(/\D/g, '').slice(-10);
+        if (!cleanPhone || cleanPhone.length !== 10) {
+            console.error(`[SMS] Invalid 10-digit mobile number provided: ${phone}`);
+            const AppError = require('./AppError');
+            throw new AppError('Invalid mobile number. Please provide a valid 10-digit mobile number.', 400);
         }
 
-        // --- TEMPORARY LOCAL TEST MOCK (User testing flow; revert on "Done") ---
-        const TEMPORARY_TEST_MOCK = true;
-        if (TEMPORARY_TEST_MOCK) {
-            console.log(`[SMS MOCK] Local test mode active. Real OTP code ${otp} logged to console for ${phone}.`);
-            return { success: true, message: "Mock SMS sent successfully" };
+        const tid = process.env.SPEAR_UC_TID_REGISTRATION || process.env.SMS_TEMPLATE_ID || '1777179421847838122';
+        
+        let message = '';
+        if (tid === '1707173623405426000') {
+            message = `Dear Customer, your Registration OTP is ${otp} for True Mentor Login -Support Team RisiEdu`;
+        } else {
+            // Default to NAINA TECHNOLOGIES LLP approved DLT template (1777179421847838122)
+            message = `Dear Customer, your NAINA TECHNOLOGIES LLP verification OTP is ${otp} Do not share this OTP with anyone.`;
         }
-        // ------------------------------------------------------------------------
 
         if (process.env.SPEAR_UC_BASE_URL && process.env.SPEAR_UC_AUTH_KEY) {
-            console.log(`[SMS] Sending live SMS via SpearUC to ${phone}...`);
+            console.log(`[SMS] Sending live SMS via SpearUC to ${cleanPhone}...`);
             const params = new URLSearchParams({
               type: 'smsquicksend',
               authKey: process.env.SPEAR_UC_AUTH_KEY,
-              sender: process.env.SPEAR_UC_SENDER_ID,
-              to_mobileno: phone,
+              sender: process.env.SPEAR_UC_SENDER_ID || 'RSTEdu',
+              to_mobileno: cleanPhone,
               sms_text: message,
               t_id: tid
             });
@@ -64,7 +62,7 @@ const sendSms = async (phone, otp, action) => {
             console.log(`[SMS] SpearUC Response:`, response.data);
 
             if (response.data && response.data.status === 'error') {
-                console.error(`\n[SMS GATEWAY CRITICAL ERROR] Provider: SpearUC | Recipient: ${phone} | Reason: ${response.data.Message || 'Failed to deliver SMS'} | Action: Check credits / DLT registration at login4.spearuc.com`);
+                console.error(`\n[SMS GATEWAY CRITICAL ERROR] Provider: SpearUC | Recipient: ${cleanPhone} | Reason: ${response.data.Message || 'Failed to deliver SMS'} | Action: Check credits / DLT registration at login4.spearuc.com`);
                 console.error('[SMS Error Payload]:', response.data);
                 const AppError = require('./AppError');
                 throw new AppError('Unable to send verification code at this time. Please try again in a few minutes or contact support.', 503);
@@ -72,7 +70,7 @@ const sendSms = async (phone, otp, action) => {
 
             return response.data;
         } else {
-            console.log(`[SMS] Live SMS Gateway not configured, skipping actual network request.`);
+            console.warn(`[SMS] Live SMS Gateway not configured, skipping actual network request.`);
             return { success: true, message: "Mock SMS sent" };
         }
     } catch (error) {
