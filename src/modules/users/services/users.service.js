@@ -236,6 +236,14 @@ const updateProfile = async (userId, role, updateData) => {
                         await existingRecord.setSubjects(targetIds);
                     }
                 } else {
+                    // Strict Guard: Prevent creating more than 2 active children
+                    const currentActiveCount = await ChildProfile.count({
+                        where: { parentId: profile.id, status: 'active' }
+                    });
+                    if (currentActiveCount >= 2) {
+                        throw new AppError('Cannot add more than 2 children to a parent profile.', 400);
+                    }
+
                     // Create new active child profile
                     const newChild = await ChildProfile.create({
                         parentId: profile.id,
@@ -246,6 +254,14 @@ const updateProfile = async (userId, role, updateData) => {
                         await newChild.setSubjects(targetIds);
                     }
                 }
+            }
+
+            // Hard Invariant: Parent must never have more than 2 active children
+            const finalActiveCount = await ChildProfile.count({
+                where: { parentId: profile.id, status: 'active' }
+            });
+            if (finalActiveCount > 2) {
+                throw new AppError('A parent profile cannot exceed 2 active children.', 400);
             }
         }
 
